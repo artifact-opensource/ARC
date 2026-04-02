@@ -129,7 +129,7 @@ const config: HardhatUserConfig = {
       "base-sepolia": {
         url: `https://base-sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
         accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-        gasPrice: parseInt(GAS_PRICE_TESTNET) * 1000000000,
+        // Let the network auto-detect gas price (Base L2 is ~0.006 gwei)
         timeout: 60000,
       }
     } : {}),

@@ -1,0 +1,9 @@
+{
+  "contract": "ArtifactVault",
+  "address": "0x4E5785633f69Ba9675eb5f0F69EDE7A374e8846c",
+  "deployer": "0x21E914dFBB137F7fEC896F11bC8BAd6BCCDB147B",
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "txHash": "0x77954929cf230a5897791e006d3ea58bb278770bbb68873a9f83ebf926abc732",
+  "timestamp": "2026-03-15T07:23:37.429Z"
+}
