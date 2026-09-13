@@ -4,108 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARC Contract Deployment IDE - Write, Compile & Deploy Smart Contracts</title>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100;200;300;400;500;600;700&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #b8002a;
             --primary-dark: #8a0020;
-            --secondary: #ff3300;
-            --background: #000000;
+            --background: #000;
             --surface: #0a0a0a;
-            --surface-hover: #1a1a1a;
+            --surface-hover: #161616;
             --border: #2a2a2a;
-            --text: #ffffff;
-            --text-secondary: #cccccc;
-            --text-muted: #888888;
-            --danger: #ff0040;
-            --warning: #ff9944;
-            --success: #00ff88;
+            --text: #fff;
+            --text-muted: #9a9a9a;
+            --danger: #ff3b5f;
+            --warning: #ffb74a;
+            --success: #00d67d;
+            --info: #69b3ff;
         }
 
         body {
-            font-family: 'Lexend', 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--background);
             color: var(--text);
             height: 100vh;
             overflow: hidden;
         }
 
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+        .container { display: flex; flex-direction: column; height: 100vh; }
 
-        /* Header */
         .header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 1rem 1.5rem;
+            padding: 1rem 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--text);
             font-family: 'Montserrat', sans-serif;
-            letter-spacing: 2px;
-        }
-        
-        .logo span {
-            color: var(--primary);
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            white-space: nowrap;
         }
 
-        /* Main Content */
-        .main-content {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+        .logo span { color: var(--primary); }
 
-        /* Sidebar */
+        .header-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; }
+
+        .main-content { display: flex; flex: 1; min-height: 0; }
+
         .sidebar {
-            width: 250px;
+            width: 280px;
             background: var(--surface);
             border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
             overflow-y: auto;
         }
 
-        .sidebar-section {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
+        .sidebar-section { padding: 1rem; border-bottom: 1px solid var(--border); }
         .sidebar-title {
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
+            font-size: 0.76rem;
             text-transform: uppercase;
             color: var(--text-muted);
+            margin-bottom: 0.7rem;
+            letter-spacing: 0.08em;
+            font-weight: 600;
         }
 
-        /* Editor Container */
-        .editor-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+        .template-card, .file-card {
+            padding: 0.7rem 0.8rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            margin-bottom: 0.55rem;
+            cursor: pointer;
+            transition: 0.15s ease;
         }
+        .template-card:hover, .file-card:hover { border-color: var(--primary); transform: translateX(3px); }
+        .template-title, .file-title { font-size: 0.9rem; font-weight: 600; }
+        .template-desc, .file-meta { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+        .editor-container { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 
         .tabs {
             display: flex;
@@ -115,801 +96,1047 @@
         }
 
         .tab {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
+            padding: 0.75rem 1rem;
             border-right: 1px solid var(--border);
-            transition: background 0.2s;
+            cursor: pointer;
             white-space: nowrap;
-        }
-
-        .tab:hover {
-            background: var(--surface-hover);
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
         .tab.active {
+            color: var(--text);
             background: var(--background);
             border-bottom: 2px solid var(--primary);
         }
 
-        .editor {
-            flex: 1;
-            background: var(--background);
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            padding: 1rem;
-            overflow: auto;
-            resize: none;
-            border: none;
-            color: var(--text);
-        }
+        .panel-view { display: none; height: 100%; min-height: 0; }
+        .panel-view.active { display: flex; flex-direction: column; }
 
-        .editor:focus {
-            outline: none;
-        }
+        #editorView { min-height: 0; }
 
-        /* Right Panel */
-        .right-panel {
-            width: 400px;
-            background: var(--surface);
-            border-left: 1px solid var(--border);
+        .editor-toolbar {
             display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .panel-section {
-            padding: 1.5rem;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.55rem 0.7rem;
             border-bottom: 1px solid var(--border);
+            background: #050505;
+            flex-wrap: wrap;
         }
 
-        .panel-title {
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 0.625rem 1.25rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.875rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--surface-hover);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            opacity: 0.9;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
+        .editor-path {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.78rem;
             color: var(--text-muted);
-        }
-
-        .form-input, .form-select {
-            width: 100%;
-            padding: 0.625rem;
-            background: var(--background);
+            background: #111;
             border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            font-size: 0.875rem;
-        }
-
-        .form-input:focus, .form-select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        /* Template Cards */
-        .template-card {
-            padding: 1rem;
-            background: var(--background);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            margin-bottom: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .template-card:hover {
-            border-color: var(--primary);
-            transform: translateX(4px);
-        }
-
-        .template-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .template-desc {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-
-        /* Console */
-        .console {
-            background: var(--background);
-            padding: 1rem;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.875rem;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-
-        .console-log {
-            margin-bottom: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 4px;
-        }
-
-        .console-success {
-            background: rgba(0, 200, 83, 0.1);
-            color: var(--success);
-        }
-
-        .console-error {
-            background: rgba(248, 81, 73, 0.1);
-            color: var(--danger);
-        }
-
-        .console-info {
-            color: var(--text-muted);
-        }
-
-        /* Status Badge */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .status-connected {
-            background: rgba(0, 200, 83, 0.1);
-            color: var(--success);
-        }
-
-        .status-disconnected {
-            background: rgba(248, 81, 73, 0.1);
-            color: var(--danger);
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--background);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
+            padding: 0.25rem 0.5rem;
             border-radius: 5px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--surface-hover);
+        #monacoEditor { flex: 1; min-height: 0; }
+
+        .right-panel {
+            width: 420px;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
         }
 
-        .network-selector {
-            padding: 0.5rem 1rem;
-            background: var(--surface-hover);
+        .panel-section { padding: 1rem; border-bottom: 1px solid var(--border); }
+        .panel-title { font-weight: 600; margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.45rem; }
+
+        .form-group { margin-bottom: 0.75rem; }
+        .form-label {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select, .network-selector {
+            width: 100%;
+            padding: 0.57rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--background);
+            color: var(--text);
+            font-size: 0.86rem;
+        }
+
+        .btn {
+            padding: 0.58rem 0.85rem;
             border: 1px solid var(--border);
             border-radius: 6px;
+            background: var(--surface-hover);
             color: var(--text);
             cursor: pointer;
+            font-size: 0.84rem;
+            font-weight: 600;
         }
+        .btn:hover { filter: brightness(1.08); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); }
+        .btn-success { background: #0f6e45; border-color: #0f6e45; }
 
-        .code-line {
-            display: block;
-            padding-left: 3em;
-            text-indent: -2.5em;
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.32rem 0.6rem;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            font-size: 0.75rem;
+            white-space: nowrap;
         }
+        .status-connected { color: var(--success); border-color: rgba(0,214,125,0.3); background: rgba(0,214,125,0.1); }
+        .status-disconnected { color: var(--danger); border-color: rgba(255,59,95,0.3); background: rgba(255,59,95,0.1); }
 
-        .line-number {
-            display: inline-block;
-            width: 2.5em;
-            color: var(--text-muted);
-            user-select: none;
+        .console {
+            max-height: 260px;
+            overflow-y: auto;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.78rem;
         }
-
-        .deployment-params {
-            margin-top: 1rem;
-            display: none;
-        }
-
-        .deployment-params.active {
-            display: block;
-        }
+        .console-log { margin-bottom: 0.4rem; padding: 0.35rem 0.45rem; border-radius: 5px; white-space: pre-wrap; }
+        .console-info { color: var(--text-muted); }
+        .console-success { color: var(--success); background: rgba(0,214,125,0.08); }
+        .console-error { color: var(--danger); background: rgba(255,59,95,0.08); }
+        .console-warning { color: var(--warning); background: rgba(255,183,74,0.08); }
 
         .info-box {
-            background: rgba(106, 0, 255, 0.1);
-            border: 1px solid var(--primary);
-            border-radius: 6px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
+            background: rgba(105, 179, 255, 0.08);
+            border: 1px solid rgba(105, 179, 255, 0.35);
+            color: #b7d9ff;
+            border-radius: 7px;
+            padding: 0.65rem;
+            font-size: 0.79rem;
+            margin-bottom: 0.75rem;
         }
 
-        .loading-spinner {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 0.5rem;
+        .compact-grid { display: grid; gap: 0.55rem; }
+
+        .output-pane, .deployments-pane {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            padding: 0.9rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8rem;
+            background: #040404;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .deployment-item {
+            padding: 0.65rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.55rem;
+            background: #0b0b0b;
+            cursor: pointer;
+        }
+        .deployment-item.active { border-color: var(--primary); }
+        .deployment-title { font-weight: 600; margin-bottom: 0.25rem; }
+        .deployment-line { color: var(--text-muted); font-size: 0.76rem; word-break: break-all; }
+
+        .fn-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.65rem;
+            margin-bottom: 0.65rem;
+            background: #0b0b0b;
+        }
+        .fn-title { font-size: 0.84rem; font-weight: 600; margin-bottom: 0.4rem; }
+        .fn-signature { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem; font-family: ui-monospace, monospace; }
+
+        .small-btn { padding: 0.42rem 0.62rem; font-size: 0.74rem; }
+
+        @media (max-width: 1280px) {
+            .sidebar { width: 240px; }
+            .right-panel { width: 380px; }
+        }
+
+        @media (max-width: 1080px) {
+            .main-content { flex-direction: column; }
+            .sidebar, .right-panel { width: 100%; border: 0; border-top: 1px solid var(--border); max-height: 34vh; }
+            #editorView { min-height: 40vh; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
-            <div class="logo">▲ ARC Contract <span>IDE</span></div>
+            <div class="logo">▲ ARC Contract <span>IDE</span> · Remix depth + VS Code control</div>
             <div class="header-actions">
-                <span id="walletStatus" class="status-badge status-disconnected">
-                    ⚠️ Not Connected
-                </span>
-                <select class="network-selector" id="networkSelector">
+                <span id="walletStatus" class="status-badge status-disconnected">⚠ Not Connected</span>
+                <select class="network-selector" id="networkSelector" style="width: auto; min-width: 150px;">
+                    <option value="base-sepolia" selected>Base Sepolia</option>
                     <option value="base">Base Mainnet</option>
-                    <option value="base-sepolia">Base Sepolia</option>
-                    <option value="localhost" selected>Localhost</option>
+                    <option value="localhost">Localhost</option>
                     <option value="ethereum">Ethereum Mainnet</option>
                 </select>
                 <button class="btn btn-primary" id="connectWallet">Connect Wallet</button>
             </div>
         </div>
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Sidebar -->
             <div class="sidebar">
                 <div class="sidebar-section">
-                    <div class="sidebar-title">Contract Templates</div>
+                    <div class="sidebar-title">Contract templates</div>
                     <div class="template-card" data-template="erc20">
                         <div class="template-title">ERC20 Token</div>
-                        <div class="template-desc">Standard fungible token</div>
+                        <div class="template-desc">Mintable owner token scaffold</div>
                     </div>
                     <div class="template-card" data-template="erc721">
                         <div class="template-title">ERC721 NFT</div>
-                        <div class="template-desc">Non-fungible token</div>
+                        <div class="template-desc">Simple mintable NFT scaffold</div>
                     </div>
-                    <div class="template-card" data-template="erc1155">
-                        <div class="template-title">ERC1155 Multi-Token</div>
-                        <div class="template-desc">Multi-token standard</div>
-                    </div>
-                    <div class="template-card" data-template="sbt">
-                        <div class="template-title">Soulbound Token (SBT)</div>
-                        <div class="template-desc">Non-transferable token</div>
-                    </div>
-                    <div class="template-card" data-template="governor">
-                        <div class="template-title">Governor Contract</div>
-                        <div class="template-desc">DAO governance</div>
+                    <div class="template-card" data-template="multifile">
+                        <div class="template-title">Multi-file Workspace</div>
+                        <div class="template-desc">Library + contract split example</div>
                     </div>
                 </div>
+
                 <div class="sidebar-section">
-                    <div class="sidebar-title">Recent Files</div>
-                    <div id="recentFiles" style="font-size: 0.875rem; color: var(--text-muted);">
-                        No recent files
+                    <div class="sidebar-title">Workspace files</div>
+                    <div id="fileList"></div>
+                    <div style="display:flex;gap:0.4rem;margin-top:0.6rem;">
+                        <input id="newFileName" class="form-input" placeholder="contracts/New.sol" style="font-size:0.78rem;">
+                        <button class="btn small-btn" id="addFileBtn">Add</button>
                     </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Quick notes</div>
+                    <div class="file-meta">• Compile uses real solc-js standard JSON mode</div>
+                    <div class="file-meta">• Deploy + execute use connected wallet signer</div>
+                    <div class="file-meta">• Deployments persist in local storage</div>
                 </div>
             </div>
 
-            <!-- Editor -->
             <div class="editor-container">
                 <div class="tabs">
                     <div class="tab active" data-tab="editor">Editor</div>
-                    <div class="tab" data-tab="compiled">Compiled</div>
-                    <div class="tab" data-tab="deployed">Deployed</div>
+                    <div class="tab" data-tab="compiled">Compiled Output</div>
+                    <div class="tab" data-tab="deployed">Deployed Contracts</div>
                 </div>
-                <textarea class="editor" id="codeEditor" placeholder="// Write your Solidity contract here...
-// Example:
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+                <div id="editorView" class="panel-view active">
+                    <div class="editor-toolbar">
+                        <div class="editor-path" id="activeFilePath">contracts/Main.sol</div>
+                        <button class="btn small-btn" id="saveWorkspaceBtn">Save workspace</button>
+                        <button class="btn small-btn" id="formatHintBtn">Format hint</button>
+                    </div>
+                    <div id="monacoEditor"></div>
+                </div>
 
-contract MyToken is ERC20 {
-    constructor() ERC20("MyToken", "MTK") {
-        _mint(msg.sender, 1000000 * 10 ** decimals());
-    }
-}"></textarea>
+                <div id="compiledView" class="panel-view">
+                    <div class="output-pane" id="compiledOutput">No build yet.</div>
+                </div>
+
+                <div id="deployedView" class="panel-view">
+                    <div class="deployments-pane" id="deploymentsPane">No deployments yet.</div>
+                </div>
             </div>
 
-            <!-- Right Panel -->
             <div class="right-panel">
                 <div class="panel-section">
                     <div class="panel-title">⚙️ Compiler</div>
                     <div class="form-group">
-                        <label class="form-label">Solidity Version</label>
-                        <select class="form-select" id="solidityVersion">
-                            <option value="0.8.21">0.8.21</option>
+                        <label class="form-label">Solc version</label>
+                        <select id="solidityVersion" class="form-select">
+                            <option value="0.8.21" selected>0.8.21</option>
                             <option value="0.8.20">0.8.20</option>
                             <option value="0.8.19">0.8.19</option>
-                            <option value="0.8.0">0.8.0</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Optimization</label>
-                        <select class="form-select" id="optimization">
-                            <option value="200">Enabled (200 runs)</option>
+                        <label class="form-label">Optimizer runs</label>
+                        <select id="optimization" class="form-select">
+                            <option value="200" selected>200</option>
+                            <option value="1000">1000</option>
                             <option value="0">Disabled</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" style="width: 100%;" id="compileBtn">
-                        🔨 Compile Contract
-                    </button>
+                    <button class="btn btn-primary" id="compileBtn" style="width:100%;">🔨 Compile Workspace</button>
                 </div>
 
                 <div class="panel-section">
                     <div class="panel-title">🚀 Deploy</div>
-                    <div class="info-box">
-                        ℹ️ Compile your contract first to enable deployment
+                    <div class="info-box">Select a compiled contract, provide constructor args JSON array, then deploy.</div>
+                    <div class="compact-grid">
+                        <div class="form-group">
+                            <label class="form-label">Contract</label>
+                            <select id="contractSelect" class="form-select" disabled><option>Compile first</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Constructor args (JSON array)</label>
+                            <input id="constructorArgs" class="form-input" placeholder='["MyToken","MTK",1000000]'>
+                        </div>
+                        <button class="btn btn-success" id="deployBtn" style="width:100%;" disabled>📤 Deploy Contract</button>
                     </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">🧪 Execute</div>
                     <div class="form-group">
-                        <label class="form-label">Contract</label>
-                        <select class="form-select" id="contractSelect" disabled>
-                            <option>Compile to see contracts</option>
-                        </select>
+                        <label class="form-label">Active deployment</label>
+                        <select id="deploymentSelect" class="form-select"><option>No deployment selected</option></select>
                     </div>
-                    <div id="constructorParams" class="deployment-params"></div>
-                    <button class="btn btn-success" style="width: 100%;" id="deployBtn" disabled>
-                        📤 Deploy Contract
-                    </button>
+                    <div id="functionRunner" style="max-height:260px; overflow:auto;">Connect wallet and select deployment.</div>
                 </div>
 
                 <div class="panel-section">
                     <div class="panel-title">📊 Console</div>
                     <div class="console" id="console">
-                        <div class="console-log console-info">Ready to compile and deploy contracts...</div>
+                        <div class="console-log console-info">Booting IDE...</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script>
-        // State
-        let wallet = null;
-        let compiledContract = null;
+        let monacoEditor;
+        let monacoReady = false;
+        let walletAddress = null;
+        let provider = null;
+        let signer = null;
+
+        let workspace = {};
+        let activeFile = 'contracts/Main.sol';
+        let compiledArtifacts = {};
         let deployedContracts = [];
+        let selectedDeploymentId = null;
 
-        // Contract Templates
+        const SOLC_CACHE = {};
+
         const templates = {
-            erc20: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract CustomToken is ERC20, Ownable {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply
-    ) ERC20(name, symbol) {
-        _mint(msg.sender, initialSupply * 10 ** decimals());
-    }
-
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
-    }
-}`,
-            erc721: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract CustomNFT is ERC721, ERC721URIStorage, Ownable {
-    uint256 private _tokenIdCounter;
-
-    constructor(
-        string memory name,
-        string memory symbol
-    ) ERC721(name, symbol) {}
-
-    function safeMint(address to, string memory uri) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter;
-        _tokenIdCounter++;
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
-    }
-}`,
-            erc1155: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract CustomMultiToken is ERC1155, Ownable {
-    constructor() ERC1155("https://api.example.com/metadata/{id}.json") {}
-
-    function mint(
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) public onlyOwner {
-        _mint(to, id, amount, data);
-    }
-
-    function mintBatch(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) public onlyOwner {
-        _mintBatch(to, ids, amounts, data);
-    }
-}`,
-            sbt: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-/**
- * @title SoulboundToken
- * @dev Non-transferable NFT (Soulbound Token)
- */
-contract SoulboundToken is ERC721, Ownable {
-    uint256 private _tokenIdCounter;
-
-    constructor(
-        string memory name,
-        string memory symbol
-    ) ERC721(name, symbol) {}
-
-    function mint(address to) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter;
-        _tokenIdCounter++;
-        _safeMint(to, tokenId);
-    }
-
-    // Override transfers to make token non-transferable
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId,
-        uint256 batchSize
-    ) internal virtual override {
-        require(from == address(0) || to == address(0), "Soulbound: token is non-transferable");
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
-    }
-}`,
-            governor: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-
-contract CustomGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes {
-    constructor(
-        IVotes _token,
-        string memory name
-    )
-        Governor(name)
-        GovernorSettings(1, 50400, 0)
-        GovernorVotes(_token)
-    {}
-
-    function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
-        return super.votingDelay();
-    }
-
-    function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
-        return super.votingPeriod();
-    }
-
-    function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
-        return super.proposalThreshold();
-    }
-}`
+            erc20: {
+                'contracts/Main.sol': `// SPDX-License-Identifier: MIT\npragma solidity ^0.8.21;\n\ncontract MainToken {\n    string public name;\n    string public symbol;\n    uint8 public decimals = 18;\n    uint256 public totalSupply;\n\n    mapping(address => uint256) public balanceOf;\n    mapping(address => mapping(address => uint256)) public allowance;\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n\n    constructor(string memory _name, string memory _symbol, uint256 _initialSupply) {\n        name = _name;\n        symbol = _symbol;\n        _mint(msg.sender, _initialSupply * (10 ** decimals));\n    }\n\n    function transfer(address to, uint256 value) external returns (bool) {\n        _transfer(msg.sender, to, value);\n        return true;\n    }\n\n    function approve(address spender, uint256 value) external returns (bool) {\n        allowance[msg.sender][spender] = value;\n        emit Approval(msg.sender, spender, value);\n        return true;\n    }\n\n    function transferFrom(address from, address to, uint256 value) external returns (bool) {\n        uint256 currentAllowance = allowance[from][msg.sender];\n        require(currentAllowance >= value, 'ERC20: insufficient allowance');\n        allowance[from][msg.sender] = currentAllowance - value;\n        _transfer(from, to, value);\n        return true;\n    }\n\n    function _transfer(address from, address to, uint256 value) internal {\n        require(to != address(0), 'ERC20: transfer to zero');\n        require(balanceOf[from] >= value, 'ERC20: transfer amount exceeds balance');\n        balanceOf[from] -= value;\n        balanceOf[to] += value;\n        emit Transfer(from, to, value);\n    }\n\n    function _mint(address to, uint256 value) internal {\n        require(to != address(0), 'ERC20: mint to zero');\n        totalSupply += value;\n        balanceOf[to] += value;\n        emit Transfer(address(0), to, value);\n    }\n}`
+            },
+            erc721: {
+                'contracts/Main.sol': `// SPDX-License-Identifier: MIT\npragma solidity ^0.8.21;\n\ncontract MainNFT {\n    string public name;\n    string public symbol;\n    uint256 public nextTokenId;\n\n    mapping(uint256 => address) private _ownerOf;\n    mapping(address => uint256) private _balanceOf;\n\n    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);\n\n    constructor(string memory _name, string memory _symbol) {\n        name = _name;\n        symbol = _symbol;\n    }\n\n    function ownerOf(uint256 tokenId) public view returns (address) {\n        address owner = _ownerOf[tokenId];\n        require(owner != address(0), 'NOT_MINTED');\n        return owner;\n    }\n\n    function balanceOf(address owner) external view returns (uint256) {\n        require(owner != address(0), 'ZERO_ADDRESS');\n        return _balanceOf[owner];\n    }\n\n    function mint(address to) external returns (uint256 tokenId) {\n        require(to != address(0), 'ZERO_ADDRESS');\n        tokenId = ++nextTokenId;\n        _ownerOf[tokenId] = to;\n        _balanceOf[to] += 1;\n        emit Transfer(address(0), to, tokenId);\n    }\n}`
+            },
+            multifile: {
+                'contracts/lib/MathLib.sol': `// SPDX-License-Identifier: MIT\npragma solidity ^0.8.21;\n\nlibrary MathLib {\n    function pct(uint256 amount, uint256 bp) internal pure returns (uint256) {\n        return (amount * bp) / 10_000;\n    }\n}`,
+                'contracts/Main.sol': `// SPDX-License-Identifier: MIT\npragma solidity ^0.8.21;\n\nimport './lib/MathLib.sol';\n\ncontract TreasuryTool {\n    using MathLib for uint256;\n\n    uint256 public treasury;\n\n    constructor(uint256 initialTreasury) {\n        treasury = initialTreasury;\n    }\n\n    function reservePortion(uint256 basisPoints) external view returns (uint256) {\n        return treasury.pct(basisPoints);\n    }\n}`
+            }
         };
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeEventListeners();
-            logToConsole('IDE initialized. Ready to write contracts!', 'info');
-        });
+        const CHAIN_CONFIG = {
+            base: { chainId: '0x2105', chainName: 'Base Mainnet', rpcUrls: ['https://mainnet.base.org'], nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, blockExplorerUrls: ['https://basescan.org'] },
+            'base-sepolia': { chainId: '0x14a34', chainName: 'Base Sepolia', rpcUrls: ['https://sepolia.base.org'], nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, blockExplorerUrls: ['https://sepolia.basescan.org'] },
+            localhost: { chainId: '0x7a69', chainName: 'Localhost 8545', rpcUrls: ['http://127.0.0.1:8545'], nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 } },
+            ethereum: { chainId: '0x1', chainName: 'Ethereum Mainnet', rpcUrls: ['https://ethereum.publicnode.com'], nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, blockExplorerUrls: ['https://etherscan.io'] }
+        };
 
-        // Event Listeners
+        function bootWorkspace() {
+            const saved = localStorage.getItem('arc_ide_workspace_v2');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    workspace = parsed.workspace || {};
+                    activeFile = parsed.activeFile && workspace[parsed.activeFile] ? parsed.activeFile : Object.keys(workspace)[0];
+                } catch (_) {}
+            }
+            if (!Object.keys(workspace).length) {
+                workspace = { ...templates.erc20 };
+                activeFile = 'contracts/Main.sol';
+            }
+        }
+
+        function saveWorkspace() {
+            if (monacoReady && monacoEditor) {
+                workspace[activeFile] = monacoEditor.getValue();
+            }
+            localStorage.setItem('arc_ide_workspace_v2', JSON.stringify({ workspace, activeFile }));
+            logToConsole('Workspace saved.', 'success');
+        }
+
+        function loadDeployments() {
+            const saved = localStorage.getItem('arc_ide_deployments_v2');
+            if (!saved) return;
+            try {
+                deployedContracts = JSON.parse(saved) || [];
+                if (deployedContracts.length) {
+                    selectedDeploymentId = deployedContracts[0].id;
+                }
+            } catch (_) {}
+        }
+
+        function saveDeployments() {
+            localStorage.setItem('arc_ide_deployments_v2', JSON.stringify(deployedContracts));
+        }
+
         function initializeEventListeners() {
-            // Template selection
             document.querySelectorAll('.template-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const template = card.dataset.template;
-                    loadTemplate(template);
-                });
+                card.addEventListener('click', () => loadTemplate(card.dataset.template));
             });
 
-            // Compile button
-            document.getElementById('compileBtn').addEventListener('click', compileContract);
-
-            // Deploy button
+            document.getElementById('compileBtn').addEventListener('click', compileWorkspace);
             document.getElementById('deployBtn').addEventListener('click', deployContract);
-
-            // Connect wallet
             document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            document.getElementById('saveWorkspaceBtn').addEventListener('click', saveWorkspace);
+            document.getElementById('formatHintBtn').addEventListener('click', () => logToConsole('Tip: use prettier-plugin-solidity in CI/pre-commit for canonical formatting.', 'info'));
+            document.getElementById('addFileBtn').addEventListener('click', addNewFile);
+            document.getElementById('deploymentSelect').addEventListener('change', (e) => {
+                selectedDeploymentId = e.target.value;
+                renderDeploymentList();
+                renderFunctionRunner();
+            });
 
-            // Tab switching
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => switchTab(tab.dataset.tab));
             });
+
+            window.addEventListener('beforeunload', () => {
+                try { saveWorkspace(); } catch (_) {}
+            });
         }
 
-        // Load template
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tabName}"]`)?.classList.add('active');
+
+            document.querySelectorAll('.panel-view').forEach(view => view.classList.remove('active'));
+            document.getElementById(`${tabName}View`)?.classList.add('active');
+        }
+
         function loadTemplate(templateName) {
-            const code = templates[templateName];
-            if (code) {
-                document.getElementById('codeEditor').value = code;
-                logToConsole(`Loaded ${templateName.toUpperCase()} template`, 'success');
+            const tpl = templates[templateName];
+            if (!tpl) return;
+
+            if (monacoReady && monacoEditor) {
+                workspace[activeFile] = monacoEditor.getValue();
             }
-        }
-
-        // Compile contract
-        async function compileContract() {
-            const code = document.getElementById('codeEditor').value;
-            const version = document.getElementById('solidityVersion').value;
-            const optimization = document.getElementById('optimization').value;
-
-            if (!code.trim()) {
-                logToConsole('Error: No contract code to compile', 'error');
-                return;
-            }
-
-            logToConsole('Compiling contract...', 'info');
-            document.getElementById('compileBtn').disabled = true;
-            document.getElementById('compileBtn').innerHTML = '<span class="loading-spinner"></span> Compiling...';
-
-            // NOTE: This is a PROTOTYPE implementation using mock compilation
-            // Production version would integrate with:
-            // - Solidity compiler API (solc-js)
-            // - Backend compilation service
-            // - IPFS for contract storage
-            // - Etherscan verification API
-            setTimeout(() => {
-                try {
-                    // Mock compilation success (production would return actual ABI and bytecode)
-                    compiledContract = {
-                        name: 'CustomToken',
-                        abi: [],
-                        bytecode: '0x...',
-                        constructorParams: [
-                            { name: 'name', type: 'string', placeholder: 'Token Name' },
-                            { name: 'symbol', type: 'string', placeholder: 'TOKEN' },
-                            { name: 'initialSupply', type: 'uint256', placeholder: '1000000' }
-                        ]
-                    };
-
-                    logToConsole('✓ Contract compiled successfully!', 'success');
-                    logToConsole(`Contract: ${compiledContract.name}`, 'info');
-                    
-                    // Enable deployment
-                    document.getElementById('contractSelect').disabled = false;
-                    document.getElementById('contractSelect').innerHTML = `<option>${compiledContract.name}</option>`;
-                    document.getElementById('deployBtn').disabled = false;
-                    
-                    // Show constructor params
-                    renderConstructorParams(compiledContract.constructorParams);
-
-                } catch (error) {
-                    logToConsole(`Compilation error: ${error.message}`, 'error');
-                } finally {
-                    document.getElementById('compileBtn').disabled = false;
-                    document.getElementById('compileBtn').innerHTML = '🔨 Compile Contract';
-                }
-            }, 2000);
-        }
-
-        // Render constructor parameters
-        function renderConstructorParams(params) {
-            const container = document.getElementById('constructorParams');
-            container.innerHTML = '';
-            
-            if (params && params.length > 0) {
-                container.classList.add('active');
-                params.forEach(param => {
-                    const formGroup = document.createElement('div');
-                    formGroup.className = 'form-group';
-                    formGroup.innerHTML = `
-                        <label class="form-label">${param.name} (${param.type})</label>
-                        <input type="text" class="form-input" id="param-${param.name}" 
-                               placeholder="${param.placeholder}" data-type="${param.type}">
-                    `;
-                    container.appendChild(formGroup);
-                });
-            } else {
-                container.classList.remove('active');
-            }
-        }
-
-        // Deploy contract
-        async function deployContract() {
-            if (!wallet) {
-                logToConsole('Error: Please connect wallet first', 'error');
-                return;
-            }
-
-            if (!compiledContract) {
-                logToConsole('Error: Compile contract first', 'error');
-                return;
-            }
-
-            // Collect constructor parameters
-            const params = [];
-            try {
-                compiledContract.constructorParams.forEach(param => {
-                    const value = document.getElementById(`param-${param.name}`).value;
-                    if (!value) {
-                        throw new Error(`Missing parameter: ${param.name}`);
-                    }
-                    params.push(value);
-                });
-            } catch (error) {
-                logToConsole(`Error: ${error.message}`, 'error');
-                return;
-            }
-
-            logToConsole('Deploying contract...', 'info');
-            logToConsole(`Network: ${document.getElementById('networkSelector').value}`, 'info');
+            workspace = { ...tpl };
+            activeFile = Object.keys(workspace)[0];
+            renderFileList();
+            loadFileInEditor(activeFile);
+            compiledArtifacts = {};
+            document.getElementById('contractSelect').innerHTML = '<option>Compile first</option>';
+            document.getElementById('contractSelect').disabled = true;
             document.getElementById('deployBtn').disabled = true;
-            document.getElementById('deployBtn').innerHTML = '<span class="loading-spinner"></span> Deploying...';
+            document.getElementById('compiledOutput').textContent = 'No build yet.';
+            logToConsole(`Loaded template: ${templateName}`, 'success');
+        }
 
-            // Simulate deployment (in production, this would call actual deployment service)
-            setTimeout(() => {
-                // Generate mock address (production would use actual deployed address)
-                const randomValues = new Uint8Array(20);
-                crypto.getRandomValues(randomValues);
-                const address = '0x' + Array.from(randomValues)
-                    .map(b => b.toString(16).padStart(2, '0'))
-                    .join('');
-                const deployment = {
-                    name: compiledContract.name,
-                    address: address,
-                    network: document.getElementById('networkSelector').value,
-                    timestamp: new Date().toISOString()
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            const files = Object.keys(workspace).sort();
+            fileList.innerHTML = files.map(path => `
+                <div class="file-card" data-file="${escapeHtml(path)}" style="border-color:${path === activeFile ? 'var(--primary)' : 'var(--border)'}">
+                    <div class="file-title">${escapeHtml(path.split('/').pop())}</div>
+                    <div class="file-meta">${escapeHtml(path)}</div>
+                </div>
+            `).join('');
+
+            fileList.querySelectorAll('.file-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const file = unescapeHtml(card.dataset.file);
+                    loadFileInEditor(file);
+                });
+            });
+        }
+
+        function addNewFile() {
+            const input = document.getElementById('newFileName');
+            const raw = (input.value || '').trim();
+            if (!raw) return;
+            if (!raw.endsWith('.sol')) {
+                logToConsole('File must end with .sol', 'error');
+                return;
+            }
+            if (workspace[raw]) {
+                logToConsole('File already exists in workspace', 'warning');
+                return;
+            }
+            if (monacoReady && monacoEditor) workspace[activeFile] = monacoEditor.getValue();
+            workspace[raw] = `// SPDX-License-Identifier: MIT\npragma solidity ^0.8.21;\n\ncontract ${toContractName(raw)} {\n\n}`;
+            input.value = '';
+            loadFileInEditor(raw);
+            renderFileList();
+            logToConsole(`Added file: ${raw}`, 'success');
+        }
+
+        function toContractName(filePath) {
+            const base = filePath.split('/').pop().replace('.sol', '');
+            return base.replace(/[^a-zA-Z0-9_]/g, '') || 'NewContract';
+        }
+
+        function loadFileInEditor(path) {
+            if (!workspace[path]) return;
+            if (monacoReady && monacoEditor) {
+                workspace[activeFile] = monacoEditor.getValue();
+            }
+            activeFile = path;
+            document.getElementById('activeFilePath').textContent = activeFile;
+            if (monacoReady && monacoEditor) {
+                monacoEditor.setValue(workspace[path]);
+            }
+            renderFileList();
+        }
+
+        async function initializeMonaco() {
+            return new Promise((resolve) => {
+                require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
+                require(['vs/editor/editor.main'], () => {
+                    monacoEditor = monaco.editor.create(document.getElementById('monacoEditor'), {
+                        value: workspace[activeFile] || '',
+                        language: 'sol',
+                        theme: 'vs-dark',
+                        minimap: { enabled: true },
+                        automaticLayout: true,
+                        fontSize: 14,
+                        wordWrap: 'on',
+                        lineNumbersMinChars: 3,
+                        tabSize: 4,
+                        insertSpaces: true,
+                        scrollBeyondLastLine: false
+                    });
+
+                    monaco.languages.register({ id: 'sol' });
+                    monaco.languages.setMonarchTokensProvider('sol', {
+                        keywords: ['pragma','solidity','contract','interface','library','struct','enum','event','function','modifier','returns','return','public','private','internal','external','view','pure','payable','virtual','override','if','else','for','while','do','break','continue','mapping','memory','storage','calldata','address','uint','uint256','int','bool','string','bytes','emit','require','revert','new','delete','constructor','receive','fallback','indexed','constant','immutable','import','from','using','as','is'],
+                        tokenizer: {
+                            root: [
+                                [/[a-zA-Z_$][\w$]*/, { cases: { '@keywords': 'keyword', '@default': 'identifier' } }],
+                                [/\d+/, 'number'],
+                                [/"([^"\\]|\\.)*$/, 'string.invalid'],
+                                [/"/, 'string', '@string_double'],
+                                [/'[^\\']'/, 'string'],
+                                [/'/, 'string.invalid'],
+                                [/\/\/.*/, 'comment'],
+                                [/\/\*/, 'comment', '@comment'],
+                                [/[{}()[\]]/, '@brackets'],
+                                [/[;,.]/, 'delimiter'],
+                                [/[-+*/=<>!&|%^~?:]+/, 'operator']
+                            ],
+                            string_double: [[/[^\\"]+/, 'string'], [/\\./, 'string.escape'], [/"/, 'string', '@pop']],
+                            comment: [[/[^/*]+/, 'comment'], [/\*\//, 'comment', '@pop'], [/[/*]/, 'comment']]
+                        }
+                    });
+
+                    monacoEditor.onDidChangeModelContent(() => {
+                        workspace[activeFile] = monacoEditor.getValue();
+                    });
+
+                    monacoReady = true;
+                    resolve();
+                });
+            });
+        }
+
+        async function ensureSolc(version) {
+            if (SOLC_CACHE[version]) return SOLC_CACHE[version];
+
+            await new Promise((resolve, reject) => {
+                const existing = document.querySelector(`script[data-solc-version="${version}"]`);
+                if (existing) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = `https://cdn.jsdelivr.net/npm/solc@${version}/dist/solc.min.js`;
+                script.async = true;
+                script.dataset.solcVersion = version;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error(`Failed loading solc ${version}`));
+                document.head.appendChild(script);
+            });
+
+            if (!window.solc || typeof window.solc.compile !== 'function') {
+                throw new Error('solc runtime unavailable after script load');
+            }
+
+            SOLC_CACHE[version] = window.solc;
+            return SOLC_CACHE[version];
+        }
+
+        async function resolveImport(path) {
+            if (workspace[path]) {
+                return { contents: workspace[path] };
+            }
+
+            const normalized = path.startsWith('./')
+                ? path.replace(/^\.\//, '')
+                : path;
+
+            if (workspace[normalized]) return { contents: workspace[normalized] };
+
+            if (path.startsWith('@openzeppelin/')) {
+                const url = `https://cdn.jsdelivr.net/npm/${path}`;
+                try {
+                    const resp = await fetch(url);
+                    if (!resp.ok) throw new Error(`${resp.status}`);
+                    const text = await resp.text();
+                    return { contents: text };
+                } catch (err) {
+                    return { error: `Failed OZ import ${path}: ${err.message}` };
+                }
+            }
+
+            return { error: `Import not found: ${path}` };
+        }
+
+        async function compileWorkspace() {
+            if (monacoReady && monacoEditor) workspace[activeFile] = monacoEditor.getValue();
+
+            const compileBtn = document.getElementById('compileBtn');
+            const selectedVersion = document.getElementById('solidityVersion').value;
+            const optimizationRuns = Number(document.getElementById('optimization').value);
+
+            compileBtn.disabled = true;
+            compileBtn.textContent = 'Compiling...';
+
+            try {
+                logToConsole(`Loading solc ${selectedVersion}...`, 'info');
+                const solc = await ensureSolc(selectedVersion);
+
+                const input = {
+                    language: 'Solidity',
+                    sources: Object.fromEntries(Object.entries(workspace).map(([name, content]) => [name, { content }])),
+                    settings: {
+                        optimizer: { enabled: optimizationRuns > 0, runs: optimizationRuns || 200 },
+                        outputSelection: {
+                            '*': {
+                                '*': ['abi', 'evm.bytecode.object', 'evm.deployedBytecode.object', 'metadata'],
+                                '': ['ast']
+                            }
+                        }
+                    }
                 };
 
-                deployedContracts.push(deployment);
-                
-                logToConsole('✓ Contract deployed successfully!', 'success');
-                logToConsole(`Address: ${address}`, 'success');
-                logToConsole(`Network: ${deployment.network}`, 'info');
-                logToConsole(`View on block explorer: https://explorer.com/address/${address}`, 'info');
+                const importCache = {};
+                const output = JSON.parse(solc.compile(JSON.stringify(input), {
+                    import: (importPath) => {
+                        if (importCache[importPath]) return importCache[importPath];
+                        importCache[importPath] = { error: `Pending async import resolution for: ${importPath}` };
+                        return importCache[importPath];
+                    }
+                }));
 
-                document.getElementById('deployBtn').disabled = false;
-                document.getElementById('deployBtn').innerHTML = '📤 Deploy Contract';
-            }, 3000);
-        }
+                const unresolved = (output.errors || []).filter(e => e.formattedMessage?.includes('Pending async import resolution'));
+                if (unresolved.length) {
+                    for (const issue of unresolved) {
+                        const match = issue.formattedMessage.match(/for:\s(.+)$/);
+                        const importPath = match ? match[1].trim() : null;
+                        if (!importPath) continue;
+                        importCache[importPath] = await resolveImport(importPath);
+                    }
 
-        // Connect wallet
-        async function connectWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    wallet = accounts[0];
-                    
-                    document.getElementById('walletStatus').className = 'status-badge status-connected';
-                    document.getElementById('walletStatus').innerHTML = `✓ ${wallet.substring(0, 6)}...${wallet.substring(38)}`;
-                    document.getElementById('connectWallet').textContent = 'Connected';
-                    document.getElementById('connectWallet').disabled = true;
-                    
-                    logToConsole(`Wallet connected: ${wallet}`, 'success');
-                } catch (error) {
-                    logToConsole(`Wallet connection failed: ${error.message}`, 'error');
+                    const finalOutput = JSON.parse(solc.compile(JSON.stringify(input), { import: (p) => importCache[p] || { error: `Import not found: ${p}` } }));
+                    handleCompileOutput(finalOutput);
+                } else {
+                    handleCompileOutput(output);
                 }
+
+            } catch (error) {
+                logToConsole(`Compile failed: ${error.message}`, 'error');
+                document.getElementById('compiledOutput').textContent = `Compilation failed:\n${error.stack || error.message}`;
+            } finally {
+                compileBtn.disabled = false;
+                compileBtn.textContent = '🔨 Compile Workspace';
+            }
+        }
+
+        function handleCompileOutput(output) {
+            compiledArtifacts = {};
+
+            const allErrors = output.errors || [];
+            const hardErrors = allErrors.filter(e => e.severity === 'error');
+            const warnings = allErrors.filter(e => e.severity !== 'error');
+
+            let report = '';
+            if (allErrors.length) {
+                report += allErrors.map(e => `[${e.severity}] ${e.formattedMessage}`).join('\n') + '\n\n';
+            }
+
+            if (hardErrors.length) {
+                logToConsole(`Compilation failed with ${hardErrors.length} error(s).`, 'error');
             } else {
-                logToConsole('MetaMask not detected. Please install MetaMask.', 'error');
-                alert('Please install MetaMask to use this feature.');
+                for (const [fileName, contracts] of Object.entries(output.contracts || {})) {
+                    for (const [contractName, artifact] of Object.entries(contracts)) {
+                        const key = `${fileName}:${contractName}`;
+                        compiledArtifacts[key] = {
+                            fileName,
+                            contractName,
+                            abi: artifact.abi || [],
+                            bytecode: `0x${artifact.evm?.bytecode?.object || ''}`,
+                            deployedBytecode: `0x${artifact.evm?.deployedBytecode?.object || ''}`
+                        };
+                    }
+                }
+
+                const options = Object.keys(compiledArtifacts).sort();
+                const contractSelect = document.getElementById('contractSelect');
+                if (!options.length) {
+                    contractSelect.innerHTML = '<option>No contracts emitted</option>';
+                    contractSelect.disabled = true;
+                    document.getElementById('deployBtn').disabled = true;
+                } else {
+                    contractSelect.innerHTML = options.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+                    contractSelect.disabled = false;
+                    document.getElementById('deployBtn').disabled = false;
+                }
+
+                report += `Contracts compiled (${options.length}):\n`;
+                options.forEach(k => {
+                    const a = compiledArtifacts[k];
+                    report += `- ${k}\n  ABI entries: ${a.abi.length}\n  Bytecode bytes: ${(a.bytecode.length - 2) / 2}\n`;
+                });
+
+                if (warnings.length) {
+                    logToConsole(`Compiled with ${warnings.length} warning(s).`, 'warning');
+                } else {
+                    logToConsole('Compilation successful.', 'success');
+                }
+            }
+
+            document.getElementById('compiledOutput').textContent = report || 'No compiler output.';
+            switchTab('compiled');
+        }
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                logToConsole('MetaMask (or injected EIP-1193 wallet) not found.', 'error');
+                return;
+            }
+
+            try {
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await switchWalletNetwork(document.getElementById('networkSelector').value);
+
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                walletAddress = accounts[0];
+                signer = await provider.getSigner();
+
+                document.getElementById('walletStatus').className = 'status-badge status-connected';
+                document.getElementById('walletStatus').textContent = `✓ ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+                document.getElementById('connectWallet').textContent = 'Connected';
+
+                logToConsole(`Wallet connected: ${walletAddress}`, 'success');
+
+                window.ethereum.on('accountsChanged', (accountsChanged) => {
+                    walletAddress = accountsChanged?.[0] || null;
+                    if (!walletAddress) {
+                        document.getElementById('walletStatus').className = 'status-badge status-disconnected';
+                        document.getElementById('walletStatus').textContent = '⚠ Not Connected';
+                        document.getElementById('connectWallet').textContent = 'Connect Wallet';
+                        signer = null;
+                        logToConsole('Wallet disconnected.', 'warning');
+                        return;
+                    }
+                    document.getElementById('walletStatus').textContent = `✓ ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+                    logToConsole(`Active account changed: ${walletAddress}`, 'info');
+                });
+
+            } catch (error) {
+                logToConsole(`Wallet connection failed: ${error.message}`, 'error');
             }
         }
 
-        // Switch tabs
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            const activeTab = Array.from(document.querySelectorAll('.tab'))
-                .find(t => t.dataset.tab === tabName);
-            if (activeTab) {
-                activeTab.classList.add('active');
+        async function switchWalletNetwork(networkKey) {
+            const cfg = CHAIN_CONFIG[networkKey];
+            if (!cfg || !window.ethereum) return;
+
+            try {
+                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: cfg.chainId }] });
+            } catch (switchErr) {
+                if (switchErr.code === 4902 && cfg.rpcUrls) {
+                    await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [cfg] });
+                } else if (switchErr.code !== 4001) {
+                    logToConsole(`Network switch warning: ${switchErr.message}`, 'warning');
+                }
             }
-            
-            // In production, would switch between editor, compiled output, and deployed contracts
-            logToConsole(`Switched to ${tabName} view`, 'info');
         }
 
-        // Console logging
+        async function deployContract() {
+            if (!signer) {
+                logToConsole('Connect wallet first.', 'error');
+                return;
+            }
+
+            const selected = document.getElementById('contractSelect').value;
+            const artifact = compiledArtifacts[selected];
+            if (!artifact || !artifact.bytecode || artifact.bytecode === '0x') {
+                logToConsole('No deployable artifact selected.', 'error');
+                return;
+            }
+
+            let constructorArgs = [];
+            const argRaw = document.getElementById('constructorArgs').value.trim();
+            if (argRaw) {
+                try {
+                    const parsed = JSON.parse(argRaw);
+                    if (!Array.isArray(parsed)) throw new Error('Constructor args must be JSON array');
+                    constructorArgs = parsed;
+                } catch (err) {
+                    logToConsole(`Constructor args parse failed: ${err.message}`, 'error');
+                    return;
+                }
+            }
+
+            const deployBtn = document.getElementById('deployBtn');
+            deployBtn.disabled = true;
+            deployBtn.textContent = 'Deploying...';
+
+            try {
+                logToConsole(`Deploying ${selected}`, 'info');
+                const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, signer);
+                const contract = await factory.deploy(...constructorArgs);
+                const receipt = await contract.deploymentTransaction().wait();
+                const address = await contract.getAddress();
+
+                const deployment = {
+                    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    key: selected,
+                    contractName: artifact.contractName,
+                    fileName: artifact.fileName,
+                    address,
+                    chain: document.getElementById('networkSelector').value,
+                    txHash: receipt.hash,
+                    abi: artifact.abi,
+                    deployedAt: new Date().toISOString()
+                };
+
+                deployedContracts.unshift(deployment);
+                selectedDeploymentId = deployment.id;
+                saveDeployments();
+
+                renderDeploymentSelect();
+                renderDeploymentList();
+                renderFunctionRunner();
+
+                switchTab('deployed');
+                logToConsole(`Deployment confirmed: ${address}`, 'success');
+                logToConsole(`Tx: ${receipt.hash}`, 'info');
+            } catch (error) {
+                logToConsole(`Deployment failed: ${error.shortMessage || error.message}`, 'error');
+            } finally {
+                deployBtn.disabled = false;
+                deployBtn.textContent = '📤 Deploy Contract';
+            }
+        }
+
+        function renderDeploymentSelect() {
+            const select = document.getElementById('deploymentSelect');
+            if (!deployedContracts.length) {
+                select.innerHTML = '<option>No deployment selected</option>';
+                return;
+            }
+            select.innerHTML = deployedContracts.map(d => `<option value="${d.id}" ${d.id === selectedDeploymentId ? 'selected' : ''}>${escapeHtml(`${d.contractName} @ ${d.address.slice(0, 8)}...${d.address.slice(-6)} (${d.chain})`)}</option>`).join('');
+        }
+
+        function renderDeploymentList() {
+            renderDeploymentSelect();
+            const pane = document.getElementById('deploymentsPane');
+            if (!deployedContracts.length) {
+                pane.textContent = 'No deployments yet.';
+                return;
+            }
+            pane.innerHTML = deployedContracts.map(d => `
+                <div class="deployment-item ${d.id === selectedDeploymentId ? 'active' : ''}" data-id="${d.id}">
+                    <div class="deployment-title">${escapeHtml(d.contractName)}</div>
+                    <div class="deployment-line">${escapeHtml(d.address)}</div>
+                    <div class="deployment-line">${escapeHtml(d.chain)} · ${escapeHtml(new Date(d.deployedAt).toLocaleString())}</div>
+                    <div class="deployment-line">tx: ${escapeHtml(d.txHash)}</div>
+                </div>
+            `).join('');
+
+            pane.querySelectorAll('.deployment-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    selectedDeploymentId = item.dataset.id;
+                    renderDeploymentList();
+                    renderFunctionRunner();
+                });
+            });
+        }
+
+        function parseArgValue(type, raw) {
+            if (type.endsWith(']')) {
+                const arr = JSON.parse(raw);
+                if (!Array.isArray(arr)) throw new Error(`Expected array for ${type}`);
+                return arr;
+            }
+
+            if (type.startsWith('uint') || type.startsWith('int')) {
+                if (raw.trim() === '') throw new Error(`Missing integer for ${type}`);
+                return BigInt(raw);
+            }
+
+            if (type === 'bool') {
+                if (raw === 'true' || raw === '1') return true;
+                if (raw === 'false' || raw === '0') return false;
+                throw new Error('Boolean must be true/false/1/0');
+            }
+
+            if (type === 'tuple') {
+                return JSON.parse(raw);
+            }
+
+            return raw;
+        }
+
+        function renderFunctionRunner() {
+            const runner = document.getElementById('functionRunner');
+            const deployment = deployedContracts.find(d => d.id === selectedDeploymentId);
+            if (!deployment) {
+                runner.textContent = 'Select a deployment to execute functions.';
+                return;
+            }
+
+            const abiFns = (deployment.abi || []).filter(x => x.type === 'function');
+            if (!abiFns.length) {
+                runner.textContent = 'No callable ABI functions found.';
+                return;
+            }
+
+            runner.innerHTML = abiFns.map((fn, idx) => {
+                const sig = `${fn.name}(${(fn.inputs || []).map(i => i.type).join(',')})`;
+                const mutability = fn.stateMutability || 'nonpayable';
+                const inputHtml = (fn.inputs || []).map((inp, i) => `
+                    <div class="form-group">
+                        <label class="form-label">${escapeHtml(inp.name || `arg${i}`)} (${escapeHtml(inp.type)})</label>
+                        <input class="form-input fn-arg" data-idx="${i}" data-type="${escapeHtml(inp.type)}" data-sig="${escapeHtml(sig)}" placeholder="${escapeHtml(inp.type)}">
+                    </div>
+                `).join('');
+
+                const valueInput = mutability === 'payable'
+                    ? `<div class="form-group"><label class="form-label">Value in ETH (optional)</label><input class="form-input fn-value" data-sig="${escapeHtml(sig)}" placeholder="0.0"></div>`
+                    : '';
+
+                const actionLabel = (mutability === 'view' || mutability === 'pure') ? 'Call (read)' : 'Send tx (write)';
+
+                return `
+                    <div class="fn-card">
+                        <div class="fn-title">${escapeHtml(fn.name)} <span style="color:var(--text-muted);font-size:0.72rem;">[${escapeHtml(mutability)}]</span></div>
+                        <div class="fn-signature">${escapeHtml(sig)}</div>
+                        ${inputHtml}
+                        ${valueInput}
+                        <button class="btn small-btn fn-run" data-sig="${escapeHtml(sig)}" data-mutability="${escapeHtml(mutability)}" data-index="${idx}">${actionLabel}</button>
+                        <div class="file-meta" style="margin-top:0.35rem;" id="fn-result-${idx}"></div>
+                    </div>
+                `;
+            }).join('');
+
+            runner.querySelectorAll('.fn-run').forEach(btn => btn.addEventListener('click', () => runFunction(btn)));
+        }
+
+        async function runFunction(btn) {
+            const deployment = deployedContracts.find(d => d.id === selectedDeploymentId);
+            if (!deployment) return;
+            if (!provider) {
+                logToConsole('Provider not ready. Connect wallet first.', 'error');
+                return;
+            }
+
+            const sig = btn.dataset.sig;
+            const mutability = btn.dataset.mutability;
+            const idx = btn.dataset.index;
+            const resultEl = document.getElementById(`fn-result-${idx}`);
+
+            try {
+                const iface = new ethers.Interface(deployment.abi);
+                const fragment = iface.getFunction(sig);
+                const argEls = Array.from(document.querySelectorAll(`.fn-arg[data-sig="${cssEscape(sig)}"]`));
+                const args = argEls.map(el => parseArgValue(el.dataset.type, el.value.trim()));
+
+                const data = iface.encodeFunctionData(fragment, args);
+
+                if (mutability === 'view' || mutability === 'pure') {
+                    const raw = await provider.call({ to: deployment.address, data });
+                    const decoded = iface.decodeFunctionResult(fragment, raw);
+                    const pretty = decoded.length === 1 ? decoded[0] : Array.from(decoded);
+                    resultEl.textContent = `Result: ${stringifySafe(pretty)}`;
+                    logToConsole(`${sig} call successful`, 'success');
+                    return;
+                }
+
+                if (!signer) {
+                    logToConsole('Signer unavailable. Reconnect wallet.', 'error');
+                    return;
+                }
+
+                const txReq = { to: deployment.address, data };
+                if (mutability === 'payable') {
+                    const valueEl = document.querySelector(`.fn-value[data-sig="${cssEscape(sig)}"]`);
+                    if (valueEl && valueEl.value.trim()) {
+                        txReq.value = ethers.parseEther(valueEl.value.trim());
+                    }
+                }
+
+                const tx = await signer.sendTransaction(txReq);
+                resultEl.textContent = `Tx submitted: ${tx.hash}`;
+                logToConsole(`${sig} tx submitted: ${tx.hash}`, 'info');
+                const receipt = await tx.wait();
+                resultEl.textContent = `Tx confirmed in block ${receipt.blockNumber}: ${tx.hash}`;
+                logToConsole(`${sig} tx confirmed`, 'success');
+
+            } catch (error) {
+                const msg = error.shortMessage || error.message;
+                resultEl.textContent = `Error: ${msg}`;
+                logToConsole(`${sig} failed: ${msg}`, 'error');
+            }
+        }
+
+        function stringifySafe(value) {
+            return JSON.stringify(value, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2);
+        }
+
+        function cssEscape(value) {
+            return value.replace(/"/g, '\\"').replace(/\\/g, '\\\\');
+        }
+
         function logToConsole(message, type = 'info') {
-            const console = document.getElementById('console');
+            const consoleEl = document.getElementById('console');
             const log = document.createElement('div');
             log.className = `console-log console-${type}`;
             log.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            console.appendChild(log);
-            console.scrollTop = console.scrollHeight;
+            consoleEl.appendChild(log);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
         }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function unescapeHtml(value) {
+            const txt = document.createElement('textarea');
+            txt.innerHTML = value;
+            return txt.value;
+        }
+
+        async function boot() {
+            bootWorkspace();
+            loadDeployments();
+            initializeEventListeners();
+            renderFileList();
+            await initializeMonaco();
+            loadFileInEditor(activeFile);
+            renderDeploymentList();
+            renderFunctionRunner();
+            logToConsole('IDE ready: Monaco editor, real compiler, deploy + execute flow online.', 'success');
+        }
+
+        document.getElementById('networkSelector').addEventListener('change', async (e) => {
+            if (window.ethereum) await switchWalletNetwork(e.target.value);
+        });
+
+        document.addEventListener('DOMContentLoaded', boot);
     </script>
 </body>
 </html>
