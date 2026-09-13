@@ -156,7 +156,7 @@
             font-weight: 500;
         }
 
-        .form-input, .form-select, .network-selector {
+        .form-input, .form-select, .network-selector, .form-textarea {
             width: 100%;
             padding: 0.57rem;
             border-radius: 6px;
@@ -165,6 +165,7 @@
             color: var(--text);
             font-size: 0.86rem;
         }
+        .form-textarea { min-height: 64px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
         .btn {
             padding: 0.58rem 0.85rem;
@@ -255,6 +256,16 @@
         .fn-signature { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem; font-family: ui-monospace, monospace; }
 
         .small-btn { padding: 0.42rem 0.62rem; font-size: 0.74rem; }
+        .arg-hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
+        .tx-item {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #090909;
+            font-size: 0.76rem;
+        }
+        .tx-label { color: var(--text-muted); font-size: 0.7rem; margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
         @media (max-width: 1280px) {
             .sidebar { width: 240px; }
@@ -392,6 +403,36 @@
                 </div>
 
                 <div class="panel-section">
+                    <div class="panel-title">✅ Verification hooks</div>
+                    <div class="form-group">
+                        <label class="form-label">Verify target</label>
+                        <select id="verifyDeploymentSelect" class="form-select"><option>No deployment selected</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Constructor args (JSON array)</label>
+                        <input id="verifyConstructorArgs" class="form-input" placeholder='["arg1", 123]'>
+                    </div>
+                    <div style="display:grid;gap:0.45rem;">
+                        <button class="btn small-btn" id="openExplorerVerifyBtn">Open explorer verify page</button>
+                        <button class="btn small-btn" id="copyVerifyCommandBtn">Copy hardhat verify command</button>
+                        <button class="btn small-btn" id="copyVerifyPayloadBtn">Copy standard-json verify payload</button>
+                    </div>
+                    <div id="verifyHookOutput" class="file-meta" style="margin-top:0.45rem;"></div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="panel-title">🧾 Activity</div>
+                    <div class="form-group">
+                        <label class="form-label">Recent transactions</label>
+                        <div id="txHistory">No transactions yet.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Decoded event logs</label>
+                        <div id="eventLogs">No event logs yet.</div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
                     <div class="panel-title">📊 Console</div>
                     <div class="console" id="console">
                         <div class="console-log console-info">Booting IDE...</div>
@@ -415,6 +456,10 @@
         let compiledArtifacts = {};
         let deployedContracts = [];
         let selectedDeploymentId = null;
+        let txHistory = [];
+        let eventHistory = [];
+        let lastCompileInput = null;
+        let lastCompileMeta = null;
 
         const SOLC_CACHE = {};
 
@@ -476,6 +521,21 @@
             localStorage.setItem('arc_ide_deployments_v2', JSON.stringify(deployedContracts));
         }
 
+        function loadActivity() {
+            try {
+                txHistory = JSON.parse(localStorage.getItem('arc_ide_tx_history_v1') || '[]');
+                eventHistory = JSON.parse(localStorage.getItem('arc_ide_event_history_v1') || '[]');
+            } catch (_) {
+                txHistory = [];
+                eventHistory = [];
+            }
+        }
+
+        function saveActivity() {
+            localStorage.setItem('arc_ide_tx_history_v1', JSON.stringify(txHistory.slice(0, 60)));
+            localStorage.setItem('arc_ide_event_history_v1', JSON.stringify(eventHistory.slice(0, 80)));
+        }
+
         function initializeEventListeners() {
             document.querySelectorAll('.template-card').forEach(card => {
                 card.addEventListener('click', () => loadTemplate(card.dataset.template));
@@ -487,11 +547,22 @@
             document.getElementById('saveWorkspaceBtn').addEventListener('click', saveWorkspace);
             document.getElementById('formatHintBtn').addEventListener('click', () => logToConsole('Tip: use prettier-plugin-solidity in CI/pre-commit for canonical formatting.', 'info'));
             document.getElementById('addFileBtn').addEventListener('click', addNewFile);
+            document.getElementById('contractSelect').addEventListener('change', syncConstructorArgsFromArtifact);
             document.getElementById('deploymentSelect').addEventListener('change', (e) => {
                 selectedDeploymentId = e.target.value;
                 renderDeploymentList();
                 renderFunctionRunner();
+                syncVerificationFromSelection();
             });
+            document.getElementById('verifyDeploymentSelect').addEventListener('change', (e) => {
+                selectedDeploymentId = e.target.value;
+                renderDeploymentList();
+                renderFunctionRunner();
+                syncVerificationFromSelection();
+            });
+            document.getElementById('openExplorerVerifyBtn').addEventListener('click', openExplorerVerifyPage);
+            document.getElementById('copyVerifyCommandBtn').addEventListener('click', copyVerifyCommand);
+            document.getElementById('copyVerifyPayloadBtn').addEventListener('click', copyVerifyPayload);
 
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => switchTab(tab.dataset.tab));
@@ -714,6 +785,11 @@
                         }
                     }
                 };
+                lastCompileInput = input;
+                lastCompileMeta = {
+                    version: selectedVersion,
+                    optimizationRuns
+                };
 
                 const importCache = {};
                 const output = JSON.parse(solc.compile(JSON.stringify(input), {
@@ -771,7 +847,8 @@
                             contractName,
                             abi: artifact.abi || [],
                             bytecode: `0x${artifact.evm?.bytecode?.object || ''}`,
-                            deployedBytecode: `0x${artifact.evm?.deployedBytecode?.object || ''}`
+                            deployedBytecode: `0x${artifact.evm?.deployedBytecode?.object || ''}`,
+                            constructorInputs: (artifact.abi || []).find(x => x.type === 'constructor')?.inputs || []
                         };
                     }
                 }
@@ -786,6 +863,7 @@
                     contractSelect.innerHTML = options.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
                     contractSelect.disabled = false;
                     document.getElementById('deployBtn').disabled = false;
+                    syncConstructorArgsFromArtifact();
                 }
 
                 report += `Contracts compiled (${options.length}):\n`;
@@ -803,6 +881,31 @@
 
             document.getElementById('compiledOutput').textContent = report || 'No compiler output.';
             switchTab('compiled');
+        }
+
+        function constructorArgsHint(inputs) {
+            return inputs.map((inp, i) => {
+                const label = inp.name || `arg${i}`;
+                const t = inp.type;
+                if (t === 'string') return `${label}`;
+                if (t.startsWith('uint') || t.startsWith('int')) return 0;
+                if (t === 'bool') return false;
+                if (t === 'address') return '0x0000000000000000000000000000000000000000';
+                if (t.endsWith(']')) return [];
+                if (t.startsWith('tuple')) return {};
+                return `${label}`;
+            });
+        }
+
+        function syncConstructorArgsFromArtifact() {
+            const selected = document.getElementById('contractSelect').value;
+            const artifact = compiledArtifacts[selected];
+            if (!artifact) return;
+            const hint = constructorArgsHint(artifact.constructorInputs || []);
+            document.getElementById('constructorArgs').placeholder = JSON.stringify(hint);
+            if (!document.getElementById('constructorArgs').value.trim()) {
+                document.getElementById('constructorArgs').value = JSON.stringify(hint);
+            }
         }
 
         async function connectWallet() {
@@ -905,6 +1008,10 @@
                     chain: document.getElementById('networkSelector').value,
                     txHash: receipt.hash,
                     abi: artifact.abi,
+                    constructorArgs,
+                    constructorTypes: (artifact.constructorInputs || []).map(x => x.type),
+                    compilerVersion: lastCompileMeta?.version || document.getElementById('solidityVersion').value,
+                    optimizerRuns: lastCompileMeta?.optimizationRuns ?? Number(document.getElementById('optimization').value),
                     deployedAt: new Date().toISOString()
                 };
 
@@ -915,6 +1022,18 @@
                 renderDeploymentSelect();
                 renderDeploymentList();
                 renderFunctionRunner();
+                syncVerificationFromSelection();
+                addTxRecord({
+                    scope: 'deployment',
+                    contractName: deployment.contractName,
+                    functionSig: 'constructor',
+                    chain: deployment.chain,
+                    address: deployment.address,
+                    txHash: receipt.hash,
+                    blockNumber: receipt.blockNumber,
+                    status: receipt.status
+                });
+                addDecodedEvents(receipt, deployment.abi, deployment.contractName, deployment.address, deployment.chain, receipt.hash);
 
                 switchTab('deployed');
                 logToConsole(`Deployment confirmed: ${address}`, 'success');
@@ -930,6 +1049,7 @@
         function renderDeploymentSelect() {
             const select = document.getElementById('deploymentSelect');
             if (!deployedContracts.length) {
+                selectedDeploymentId = null;
                 select.innerHTML = '<option>No deployment selected</option>';
                 return;
             }
@@ -938,6 +1058,7 @@
 
         function renderDeploymentList() {
             renderDeploymentSelect();
+            renderVerifySelect();
             const pane = document.getElementById('deploymentsPane');
             if (!deployedContracts.length) {
                 pane.textContent = 'No deployments yet.';
@@ -957,32 +1078,258 @@
                     selectedDeploymentId = item.dataset.id;
                     renderDeploymentList();
                     renderFunctionRunner();
+                    syncVerificationFromSelection();
                 });
             });
         }
 
-        function parseArgValue(type, raw) {
-            if (type.endsWith(']')) {
+        function addTxRecord(entry) {
+            txHistory.unshift({
+                ...entry,
+                timestamp: new Date().toISOString()
+            });
+            txHistory = txHistory.slice(0, 60);
+            saveActivity();
+            renderActivityPanel();
+        }
+
+        function addDecodedEvents(receipt, abi, contractName, address, chain, txHash) {
+            const iface = new ethers.Interface(abi || []);
+            const events = [];
+            (receipt.logs || []).forEach((log) => {
+                try {
+                    const parsed = iface.parseLog(log);
+                    if (!parsed) return;
+                    events.push({
+                        timestamp: new Date().toISOString(),
+                        contractName,
+                        address,
+                        chain,
+                        txHash,
+                        eventName: parsed.name,
+                        args: Object.fromEntries(parsed.fragment.inputs.map((inp, i) => [inp.name || `arg${i}`, parsed.args[i]]))
+                    });
+                } catch (_) {
+                    // ignore logs unrelated to selected ABI
+                }
+            });
+            if (events.length) {
+                eventHistory = [...events, ...eventHistory].slice(0, 80);
+                saveActivity();
+                renderActivityPanel();
+            }
+        }
+
+        function renderActivityPanel() {
+            const txEl = document.getElementById('txHistory');
+            const eventEl = document.getElementById('eventLogs');
+            if (!txEl || !eventEl) return;
+
+            if (!txHistory.length) {
+                txEl.textContent = 'No transactions yet.';
+            } else {
+                txEl.innerHTML = txHistory.slice(0, 10).map(tx => `
+                    <div class="tx-item">
+                        <div class="tx-label">${escapeHtml(tx.scope)} · ${escapeHtml(tx.contractName || 'Contract')}</div>
+                        <div>${escapeHtml(tx.functionSig || '')}</div>
+                        <div class="file-meta">${escapeHtml(tx.chain || '')} · block ${escapeHtml(String(tx.blockNumber || '-'))}</div>
+                        <div class="file-meta">${escapeHtml(tx.txHash || '')}</div>
+                    </div>
+                `).join('');
+            }
+
+            if (!eventHistory.length) {
+                eventEl.textContent = 'No event logs yet.';
+            } else {
+                eventEl.innerHTML = eventHistory.slice(0, 12).map(ev => `
+                    <div class="tx-item">
+                        <div class="tx-label">${escapeHtml(ev.contractName || '')} · ${escapeHtml(ev.eventName || '')}</div>
+                        <div class="file-meta">${escapeHtml(ev.chain || '')}</div>
+                        <div class="file-meta">${escapeHtml(ev.txHash || '')}</div>
+                        <div style="margin-top:0.25rem; white-space:pre-wrap;word-break:break-word;">${escapeHtml(stringifySafe(ev.args))}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderVerifySelect() {
+            const select = document.getElementById('verifyDeploymentSelect');
+            if (!select) return;
+            if (!deployedContracts.length) {
+                select.innerHTML = '<option>No deployment selected</option>';
+                return;
+            }
+            if (!selectedDeploymentId || !deployedContracts.some(d => d.id === selectedDeploymentId)) {
+                selectedDeploymentId = deployedContracts[0].id;
+            }
+            select.innerHTML = deployedContracts.map(d => `<option value="${d.id}" ${d.id === selectedDeploymentId ? 'selected' : ''}>${escapeHtml(`${d.contractName} @ ${d.address.slice(0, 8)}...${d.address.slice(-6)} (${d.chain})`)}</option>`).join('');
+        }
+
+        function getExplorerBase(chain) {
+            return CHAIN_CONFIG[chain]?.blockExplorerUrls?.[0] || '';
+        }
+
+        function syncVerificationFromSelection() {
+            renderVerifySelect();
+            const deployment = deployedContracts.find(d => d.id === selectedDeploymentId);
+            const verifyOutput = document.getElementById('verifyHookOutput');
+            if (!deployment) {
+                if (verifyOutput) verifyOutput.textContent = 'No deployment selected.';
+                return;
+            }
+            document.getElementById('verifyConstructorArgs').value = stringifySafe(deployment.constructorArgs || []);
+            if (verifyOutput) verifyOutput.textContent = `Ready to verify ${deployment.contractName} on ${deployment.chain}`;
+        }
+
+        async function copyToClipboard(text) {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                return;
+            }
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+        }
+
+        function getSelectedVerificationDeployment() {
+            const id = document.getElementById('verifyDeploymentSelect').value || selectedDeploymentId;
+            return deployedContracts.find(d => d.id === id);
+        }
+
+        function getVerificationCtorArgs(deployment) {
+            const raw = document.getElementById('verifyConstructorArgs').value.trim();
+            if (!raw) return deployment.constructorArgs || [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) throw new Error('Verification constructor args must be JSON array');
+            return parsed;
+        }
+
+        function openExplorerVerifyPage() {
+            const deployment = getSelectedVerificationDeployment();
+            if (!deployment) {
+                logToConsole('No deployment selected for verification.', 'error');
+                return;
+            }
+            const explorer = getExplorerBase(deployment.chain);
+            if (!explorer) {
+                logToConsole('No explorer URL configured for this chain.', 'error');
+                return;
+            }
+            window.open(`${explorer}/verifyContract?a=${deployment.address}`, '_blank', 'noopener');
+        }
+
+        async function copyVerifyCommand() {
+            try {
+                const deployment = getSelectedVerificationDeployment();
+                if (!deployment) throw new Error('No deployment selected');
+                const ctorArgs = getVerificationCtorArgs(deployment);
+                const cmd = `npx hardhat verify --network ${deployment.chain} ${deployment.address} ${ctorArgs.map(a => JSON.stringify(a)).join(' ')}`;
+                await copyToClipboard(cmd);
+                document.getElementById('verifyHookOutput').textContent = 'Hardhat verify command copied.';
+                logToConsole('Copied Hardhat verify command.', 'success');
+            } catch (error) {
+                logToConsole(`Verify command failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function copyVerifyPayload() {
+            try {
+                const deployment = getSelectedVerificationDeployment();
+                if (!deployment) throw new Error('No deployment selected');
+                const payload = {
+                    language: 'Solidity',
+                    sources: Object.fromEntries(Object.entries(workspace).map(([name, content]) => [name, { content }])),
+                    settings: lastCompileInput?.settings || {},
+                    contract: `${deployment.fileName}:${deployment.contractName}`,
+                    address: deployment.address,
+                    chain: deployment.chain,
+                    compilerVersion: deployment.compilerVersion,
+                    optimizerRuns: deployment.optimizerRuns,
+                    constructorArgs: getVerificationCtorArgs(deployment)
+                };
+                await copyToClipboard(JSON.stringify(payload, null, 2));
+                document.getElementById('verifyHookOutput').textContent = 'Verification payload copied.';
+                logToConsole('Copied standard-json verification payload.', 'success');
+            } catch (error) {
+                logToConsole(`Verify payload failed: ${error.message}`, 'error');
+            }
+        }
+
+        function argKind(type) {
+            if (/\[[^\]]*\]$/.test(type)) return 'array';
+            if (type.startsWith('tuple')) return 'tuple';
+            if (type === 'bool') return 'bool';
+            if (type.startsWith('uint') || type.startsWith('int')) return 'int';
+            if (type.startsWith('bytes') && type !== 'bytes') return 'bytesN';
+            if (type === 'bytes') return 'bytes';
+            if (type === 'address') return 'address';
+            if (type === 'string') return 'string';
+            return 'text';
+        }
+
+        function tuplePlaceholder(input) {
+            const obj = {};
+            (input.components || []).forEach((c, i) => {
+                obj[c.name || `field${i}`] = c.type.startsWith('uint') || c.type.startsWith('int') ? '0' : (c.type === 'bool' ? false : '');
+            });
+            return JSON.stringify(obj);
+        }
+
+        function renderArgInputControl(inp, i, sig, fnId) {
+            const kind = argKind(inp.type);
+            const name = inp.name || `arg${i}`;
+            const baseAttrs = `class="form-input fn-arg" data-idx="${i}" data-type="${escapeHtml(inp.type)}" data-kind="${kind}" data-fnid="${fnId}"`;
+            if (kind === 'bool') {
+                return `
+                    <div class="form-group">
+                        <label class="form-label">${escapeHtml(name)} (${escapeHtml(inp.type)})</label>
+                        <select ${baseAttrs.replace('form-input', 'form-select')}><option value="true">true</option><option value="false">false</option></select>
+                    </div>
+                `;
+            }
+            if (kind === 'array' || kind === 'tuple') {
+                const placeholder = kind === 'array' ? '[...]' : tuplePlaceholder(inp);
+                return `
+                    <div class="form-group">
+                        <label class="form-label">${escapeHtml(name)} (${escapeHtml(inp.type)})</label>
+                        <textarea ${baseAttrs.replace('form-input', 'form-textarea')} placeholder='${escapeHtml(placeholder)}'></textarea>
+                        <div class="arg-hint">${kind === 'array' ? 'JSON array input' : 'JSON object/array for tuple input'}</div>
+                    </div>
+                `;
+            }
+            const inputType = kind === 'int' ? 'number' : 'text';
+            const placeholder = kind === 'address' ? '0x...' : kind === 'bytes' || kind === 'bytesN' ? '0x' : escapeHtml(inp.type);
+            return `
+                <div class="form-group">
+                    <label class="form-label">${escapeHtml(name)} (${escapeHtml(inp.type)})</label>
+                    <input type="${inputType}" ${baseAttrs} placeholder="${placeholder}">
+                </div>
+            `;
+        }
+
+        function parseArgValue(type, raw, kind) {
+            if (raw === '' && kind !== 'bool') throw new Error(`Missing value for ${type}`);
+            if (kind === 'array') {
                 const arr = JSON.parse(raw);
-                if (!Array.isArray(arr)) throw new Error(`Expected array for ${type}`);
+                if (!Array.isArray(arr)) throw new Error(`Expected JSON array for ${type}`);
                 return arr;
             }
-
-            if (type.startsWith('uint') || type.startsWith('int')) {
-                if (raw.trim() === '') throw new Error(`Missing integer for ${type}`);
-                return BigInt(raw);
-            }
-
-            if (type === 'bool') {
-                if (raw === 'true' || raw === '1') return true;
-                if (raw === 'false' || raw === '0') return false;
-                throw new Error('Boolean must be true/false/1/0');
-            }
-
-            if (type === 'tuple') {
+            if (kind === 'tuple') {
                 return JSON.parse(raw);
             }
-
+            if (kind === 'int') return BigInt(raw);
+            if (kind === 'bool') return raw === 'true' || raw === '1';
+            if (kind === 'address') {
+                if (!ethers.isAddress(raw)) throw new Error(`Invalid address for ${type}`);
+                return raw;
+            }
+            if (kind === 'bytes' || kind === 'bytesN') {
+                if (!ethers.isHexString(raw)) throw new Error(`Invalid hex bytes for ${type}`);
+                return raw;
+            }
             return raw;
         }
 
@@ -1002,16 +1349,12 @@
 
             runner.innerHTML = abiFns.map((fn, idx) => {
                 const sig = `${fn.name}(${(fn.inputs || []).map(i => i.type).join(',')})`;
+                const fnId = `${idx}-${fn.name.replace(/[^a-zA-Z0-9_]/g, '')}`;
                 const mutability = fn.stateMutability || 'nonpayable';
-                const inputHtml = (fn.inputs || []).map((inp, i) => `
-                    <div class="form-group">
-                        <label class="form-label">${escapeHtml(inp.name || `arg${i}`)} (${escapeHtml(inp.type)})</label>
-                        <input class="form-input fn-arg" data-idx="${i}" data-type="${escapeHtml(inp.type)}" data-sig="${escapeHtml(sig)}" placeholder="${escapeHtml(inp.type)}">
-                    </div>
-                `).join('');
+                const inputHtml = (fn.inputs || []).map((inp, i) => renderArgInputControl(inp, i, sig, fnId)).join('');
 
                 const valueInput = mutability === 'payable'
-                    ? `<div class="form-group"><label class="form-label">Value in ETH (optional)</label><input class="form-input fn-value" data-sig="${escapeHtml(sig)}" placeholder="0.0"></div>`
+                    ? `<div class="form-group"><label class="form-label">Value in ETH (optional)</label><input class="form-input fn-value" data-fnid="${fnId}" placeholder="0.0"></div>`
                     : '';
 
                 const actionLabel = (mutability === 'view' || mutability === 'pure') ? 'Call (read)' : 'Send tx (write)';
@@ -1022,7 +1365,7 @@
                         <div class="fn-signature">${escapeHtml(sig)}</div>
                         ${inputHtml}
                         ${valueInput}
-                        <button class="btn small-btn fn-run" data-sig="${escapeHtml(sig)}" data-mutability="${escapeHtml(mutability)}" data-index="${idx}">${actionLabel}</button>
+                        <button class="btn small-btn fn-run" data-sig="${escapeHtml(sig)}" data-mutability="${escapeHtml(mutability)}" data-index="${idx}" data-fnid="${fnId}">${actionLabel}</button>
                         <div class="file-meta" style="margin-top:0.35rem;" id="fn-result-${idx}"></div>
                     </div>
                 `;
@@ -1042,13 +1385,14 @@
             const sig = btn.dataset.sig;
             const mutability = btn.dataset.mutability;
             const idx = btn.dataset.index;
+            const fnId = btn.dataset.fnid;
             const resultEl = document.getElementById(`fn-result-${idx}`);
 
             try {
                 const iface = new ethers.Interface(deployment.abi);
                 const fragment = iface.getFunction(sig);
-                const argEls = Array.from(document.querySelectorAll(`.fn-arg[data-sig="${cssEscape(sig)}"]`));
-                const args = argEls.map(el => parseArgValue(el.dataset.type, el.value.trim()));
+                const argEls = Array.from(document.querySelectorAll(`.fn-arg[data-fnid="${fnId}"]`));
+                const args = argEls.map(el => parseArgValue(el.dataset.type, el.value.trim(), el.dataset.kind));
 
                 const data = iface.encodeFunctionData(fragment, args);
 
@@ -1068,7 +1412,7 @@
 
                 const txReq = { to: deployment.address, data };
                 if (mutability === 'payable') {
-                    const valueEl = document.querySelector(`.fn-value[data-sig="${cssEscape(sig)}"]`);
+                    const valueEl = document.querySelector(`.fn-value[data-fnid="${fnId}"]`);
                     if (valueEl && valueEl.value.trim()) {
                         txReq.value = ethers.parseEther(valueEl.value.trim());
                     }
@@ -1080,6 +1424,17 @@
                 const receipt = await tx.wait();
                 resultEl.textContent = `Tx confirmed in block ${receipt.blockNumber}: ${tx.hash}`;
                 logToConsole(`${sig} tx confirmed`, 'success');
+                addTxRecord({
+                    scope: 'function',
+                    contractName: deployment.contractName,
+                    functionSig: sig,
+                    chain: deployment.chain,
+                    address: deployment.address,
+                    txHash: tx.hash,
+                    blockNumber: receipt.blockNumber,
+                    status: receipt.status
+                });
+                addDecodedEvents(receipt, deployment.abi, deployment.contractName, deployment.address, deployment.chain, tx.hash);
 
             } catch (error) {
                 const msg = error.shortMessage || error.message;
@@ -1123,12 +1478,15 @@
         async function boot() {
             bootWorkspace();
             loadDeployments();
+            loadActivity();
             initializeEventListeners();
             renderFileList();
             await initializeMonaco();
             loadFileInEditor(activeFile);
             renderDeploymentList();
             renderFunctionRunner();
+            syncVerificationFromSelection();
+            renderActivityPanel();
             logToConsole('IDE ready: Monaco editor, real compiler, deploy + execute flow online.', 'success');
         }
 
