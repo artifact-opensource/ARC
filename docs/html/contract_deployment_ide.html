@@ -3,111 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARC Contract Deployment IDE - Write, Compile & Deploy Smart Contracts</title>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <title>ADE — Artifact Development Engine</title>
+    <meta name="description" content="Artifact Development Engine: high-control Solidity workspace with compile, deploy, verification hooks, and execution sandboxes.">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #b8002a;
-            --primary-dark: #8a0020;
-            --background: #000;
-            --surface: #0a0a0a;
-            --surface-hover: #161616;
+            --bg: #000000;
+            --panel: #0a0a0a;
+            --panel-2: #111111;
             --border: #2a2a2a;
-            --text: #fff;
-            --text-muted: #9a9a9a;
-            --danger: #ff3b5f;
-            --warning: #ffb74a;
-            --success: #00d67d;
-            --info: #69b3ff;
+            --border-strong: #4a4a4a;
+            --text: #ffffff;
+            --muted: #a6a6a6;
+            --dim: #7a7a7a;
+            --inverse: #000000;
+            --radius: 8px;
+            --space-1: 0.4rem;
+            --space-2: 0.65rem;
+            --space-3: 0.85rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
         }
 
-        body {
-            font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--background);
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
             color: var(--text);
-            height: 100vh;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            font-size: 14px;
+            line-height: 1.4;
             overflow: hidden;
         }
 
-        .container { display: flex; flex-direction: column; height: 100vh; }
+        .container { display: flex; flex-direction: column; height: 100vh; background: var(--bg); }
 
         .header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
+            gap: var(--space-4);
+            padding: var(--space-4) var(--space-5);
+            border-bottom: 1px solid var(--border);
+            background: #050505;
         }
 
-        .logo {
-            font-family: 'Montserrat', sans-serif;
-            letter-spacing: 1px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
+        .brand { display: flex; align-items: center; gap: 0.8rem; min-width: 280px; }
 
-        .logo span { color: var(--primary); }
-
-        .header-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; }
-
-        .main-content { display: flex; flex: 1; min-height: 0; }
-
-        .sidebar {
-            width: 280px;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-        }
-
-        .sidebar-section { padding: 1rem; border-bottom: 1px solid var(--border); }
-        .sidebar-title {
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 0.7rem;
+        .logo-placeholder {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--border-strong);
+            background: linear-gradient(135deg, #121212 0%, #000 100%);
+            display: inline-grid;
+            place-items: center;
+            color: var(--text);
+            font-size: 11px;
             letter-spacing: 0.08em;
+            flex: 0 0 auto;
+        }
+
+        .brand-title {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0.1rem;
+        }
+
+        .brand-title .ade {
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+        }
+
+        .brand-title .full {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }
+
+        .header-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 268px 1fr 408px;
+            gap: 0;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .sidebar, .right-panel {
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            min-height: 0;
+            overflow: auto;
+        }
+
+        .right-panel { border-right: 0; border-left: 1px solid var(--border); }
+
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            background: #030303;
+        }
+
+        .sidebar-section, .panel-section {
+            border-bottom: 1px solid var(--border);
+            padding: var(--space-4);
+        }
+
+        .sidebar-title, .panel-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            margin-bottom: var(--space-3);
             font-weight: 600;
         }
 
-        .template-card, .file-card {
-            padding: 0.7rem 0.8rem;
-            background: var(--background);
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            margin-bottom: 0.55rem;
-            cursor: pointer;
-            transition: 0.15s ease;
-        }
-        .template-card:hover, .file-card:hover { border-color: var(--primary); transform: translateX(3px); }
-        .template-title, .file-title { font-size: 0.9rem; font-weight: 600; }
-        .template-desc, .file-meta { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem; }
+        .panel-title { margin-bottom: var(--space-2); }
 
-        .editor-container { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+        .template-card, .file-card, .deployment-item, .fn-card, .tx-item {
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            border-radius: var(--radius);
+            padding: var(--space-3);
+            margin-bottom: var(--space-2);
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .template-card:hover, .file-card:hover, .deployment-item:hover {
+            border-color: var(--border-strong);
+            background: #171717;
+            cursor: pointer;
+        }
+
+        .template-title, .file-title, .deployment-title, .fn-title { color: var(--text); font-weight: 600; font-size: 0.82rem; }
+        .template-desc, .file-meta, .deployment-line, .arg-hint, .tx-label { color: var(--muted); font-size: 0.74rem; }
 
         .tabs {
             display: flex;
-            background: var(--surface);
+            align-items: center;
             border-bottom: 1px solid var(--border);
+            background: #050505;
             overflow-x: auto;
         }
 
         .tab {
-            padding: 0.75rem 1rem;
             border-right: 1px solid var(--border);
-            cursor: pointer;
+            color: var(--muted);
+            padding: 0.72rem 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.68rem;
+            font-weight: 600;
             white-space: nowrap;
-            color: var(--text-muted);
-            font-size: 0.9rem;
+            cursor: pointer;
         }
 
         .tab.active {
+            background: #000;
             color: var(--text);
-            background: var(--background);
-            border-bottom: 2px solid var(--primary);
+            border-bottom: 1px solid var(--text);
         }
 
         .panel-view { display: none; height: 100%; min-height: 0; }
@@ -118,174 +180,185 @@
         .editor-toolbar {
             display: flex;
             align-items: center;
-            gap: 0.55rem;
-            padding: 0.55rem 0.7rem;
+            justify-content: space-between;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-4);
             border-bottom: 1px solid var(--border);
-            background: #050505;
+            background: #090909;
             flex-wrap: wrap;
         }
 
         .editor-path {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            background: #111;
             border: 1px solid var(--border);
-            padding: 0.25rem 0.5rem;
-            border-radius: 5px;
+            border-radius: 6px;
+            background: #000;
+            color: var(--muted);
+            padding: 0.33rem 0.5rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.74rem;
+            letter-spacing: 0.01em;
         }
 
         #monacoEditor { flex: 1; min-height: 0; }
-
-        .right-panel {
-            width: 420px;
-            background: var(--surface);
-            border-left: 1px solid var(--border);
-            overflow-y: auto;
-        }
-
-        .panel-section { padding: 1rem; border-bottom: 1px solid var(--border); }
-        .panel-title { font-weight: 600; margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.45rem; }
-
-        .form-group { margin-bottom: 0.75rem; }
-        .form-label {
-            display: block;
-            margin-bottom: 0.35rem;
-            color: var(--text-muted);
-            font-size: 0.78rem;
-            font-weight: 500;
-        }
-
-        .form-input, .form-select, .network-selector, .form-textarea {
-            width: 100%;
-            padding: 0.57rem;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--background);
-            color: var(--text);
-            font-size: 0.86rem;
-        }
-        .form-textarea { min-height: 64px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-
-        .btn {
-            padding: 0.58rem 0.85rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--surface-hover);
-            color: var(--text);
-            cursor: pointer;
-            font-size: 0.84rem;
-            font-weight: 600;
-        }
-        .btn:hover { filter: brightness(1.08); }
-        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .btn-primary { background: var(--primary); border-color: var(--primary); }
-        .btn-success { background: #0f6e45; border-color: #0f6e45; }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.32rem 0.6rem;
-            border-radius: 12px;
-            border: 1px solid transparent;
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
-        .status-connected { color: var(--success); border-color: rgba(0,214,125,0.3); background: rgba(0,214,125,0.1); }
-        .status-disconnected { color: var(--danger); border-color: rgba(255,59,95,0.3); background: rgba(255,59,95,0.1); }
-
-        .console {
-            max-height: 260px;
-            overflow-y: auto;
-            background: var(--background);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.6rem;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.78rem;
-        }
-        .console-log { margin-bottom: 0.4rem; padding: 0.35rem 0.45rem; border-radius: 5px; white-space: pre-wrap; }
-        .console-info { color: var(--text-muted); }
-        .console-success { color: var(--success); background: rgba(0,214,125,0.08); }
-        .console-error { color: var(--danger); background: rgba(255,59,95,0.08); }
-        .console-warning { color: var(--warning); background: rgba(255,183,74,0.08); }
-
-        .info-box {
-            background: rgba(105, 179, 255, 0.08);
-            border: 1px solid rgba(105, 179, 255, 0.35);
-            color: #b7d9ff;
-            border-radius: 7px;
-            padding: 0.65rem;
-            font-size: 0.79rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .compact-grid { display: grid; gap: 0.55rem; }
 
         .output-pane, .deployments-pane {
             flex: 1;
             min-height: 0;
             overflow: auto;
-            padding: 0.9rem;
+            background: #000;
+            padding: var(--space-4);
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.8rem;
-            background: #040404;
+            font-size: 0.77rem;
+            white-space: pre-wrap;
+            line-height: 1.45;
         }
 
-        .deployment-item {
-            padding: 0.65rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 0.55rem;
-            background: #0b0b0b;
-            cursor: pointer;
+        .form-group { margin-bottom: var(--space-2); }
+        .form-label {
+            display: block;
+            font-size: 0.69rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 0.33rem;
+            font-weight: 600;
         }
-        .deployment-item.active { border-color: var(--primary); }
-        .deployment-title { font-weight: 600; margin-bottom: 0.25rem; }
-        .deployment-line { color: var(--text-muted); font-size: 0.76rem; word-break: break-all; }
 
-        .fn-card {
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.65rem;
-            margin-bottom: 0.65rem;
-            background: #0b0b0b;
-        }
-        .fn-title { font-size: 0.84rem; font-weight: 600; margin-bottom: 0.4rem; }
-        .fn-signature { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.5rem; font-family: ui-monospace, monospace; }
-
-        .small-btn { padding: 0.42rem 0.62rem; font-size: 0.74rem; }
-        .arg-hint { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
-        .tx-item {
+        .form-input, .form-select, .network-selector, .form-textarea {
+            width: 100%;
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            background: #090909;
-            font-size: 0.76rem;
-        }
-        .tx-label { color: var(--text-muted); font-size: 0.7rem; margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
-
-        @media (max-width: 1280px) {
-            .sidebar { width: 240px; }
-            .right-panel { width: 380px; }
+            background: #000;
+            color: var(--text);
+            padding: 0.52rem 0.58rem;
+            font-size: 0.82rem;
+            outline: none;
         }
 
-        @media (max-width: 1080px) {
-            .main-content { flex-direction: column; }
-            .sidebar, .right-panel { width: 100%; border: 0; border-top: 1px solid var(--border); max-height: 34vh; }
-            #editorView { min-height: 40vh; }
+        .form-input:focus, .form-select:focus, .network-selector:focus, .form-textarea:focus { border-color: var(--border-strong); }
+        .form-textarea { min-height: 64px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+        .btn {
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            background: #fff;
+            color: #000;
+            padding: 0.5rem 0.68rem;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn:hover { filter: brightness(0.92); }
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-primary, .btn-success { background: #fff; color: #000; border-color: #fff; }
+        .small-btn { padding: 0.44rem 0.58rem; font-size: 0.68rem; }
+
+        .status-badge {
+            border: 1px solid var(--border-strong);
+            border-radius: 999px;
+            padding: 0.24rem 0.56rem;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            background: #111;
+            color: var(--text);
+        }
+        .status-connected { background: #fff; color: #000; border-color: #fff; }
+        .status-disconnected { background: #111; color: var(--muted); border-color: var(--border); }
+
+        .info-box {
+            border: 1px solid var(--border);
+            background: #0f0f0f;
+            color: var(--muted);
+            border-radius: 6px;
+            padding: 0.55rem 0.62rem;
+            font-size: 0.74rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .console {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #000;
+            max-height: 240px;
+            overflow: auto;
+            padding: var(--space-2);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.74rem;
+        }
+
+        .console-log {
+            border-radius: 5px;
+            padding: 0.35rem 0.45rem;
+            margin-bottom: 0.28rem;
+            border: 1px solid var(--border);
+            background: #0b0b0b;
+        }
+        .console-info { color: var(--muted); }
+        .console-success { color: #fff; border-color: #fff; }
+        .console-warning { color: #d0d0d0; }
+        .console-error { color: #f5f5f5; border-color: #5b5b5b; background: #131313; }
+
+        .compact-grid { display: grid; gap: var(--space-2); }
+
+        #functionRunner {
+            max-height: 270px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: var(--space-2);
+            background: #050505;
+        }
+
+        .fn-signature {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 0.2rem;
+            margin-bottom: 0.35rem;
+            word-break: break-all;
+        }
+
+        .tx-label {
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.22rem;
+            color: var(--dim);
+        }
+
+        @media (max-width: 1360px) {
+            .main-content { grid-template-columns: 242px 1fr 360px; }
+        }
+
+        @media (max-width: 1140px) {
+            .main-content { grid-template-columns: 1fr; }
+            .sidebar, .right-panel {
+                border-left: 0;
+                border-right: 0;
+                border-top: 1px solid var(--border);
+                max-height: 36vh;
+            }
+            .editor-container { min-height: 44vh; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">▲ ARC Contract <span>IDE</span> · Remix depth + VS Code control</div>
+            <div class="brand">
+                <div class="logo-placeholder" aria-hidden="true">LOGO</div>
+                <div class="brand-title">
+                    <div class="ade">ADE</div>
+                    <div class="full">Artifact Development Engine</div>
+                </div>
+            </div>
             <div class="header-actions">
-                <span id="walletStatus" class="status-badge status-disconnected">⚠ Not Connected</span>
-                <select class="network-selector" id="networkSelector" style="width: auto; min-width: 150px;">
+                <span id="walletStatus" class="status-badge status-disconnected">Not Connected</span>
+                <select class="network-selector" id="networkSelector" style="width:auto; min-width: 145px;">
                     <option value="base-sepolia" selected>Base Sepolia</option>
                     <option value="base">Base Mainnet</option>
                     <option value="localhost">Localhost</option>
@@ -296,41 +369,40 @@
         </div>
 
         <div class="main-content">
-            <div class="sidebar">
-                <div class="sidebar-section">
-                    <div class="sidebar-title">Contract templates</div>
+            <aside class="sidebar">
+                <section class="sidebar-section">
+                    <div class="sidebar-title">Templates</div>
                     <div class="template-card" data-template="erc20">
                         <div class="template-title">ERC20 Token</div>
-                        <div class="template-desc">Mintable owner token scaffold</div>
+                        <div class="template-desc">Fungible token scaffold</div>
                     </div>
                     <div class="template-card" data-template="erc721">
                         <div class="template-title">ERC721 NFT</div>
-                        <div class="template-desc">Simple mintable NFT scaffold</div>
+                        <div class="template-desc">Mintable NFT scaffold</div>
                     </div>
                     <div class="template-card" data-template="multifile">
                         <div class="template-title">Multi-file Workspace</div>
-                        <div class="template-desc">Library + contract split example</div>
+                        <div class="template-desc">Library + contract split</div>
                     </div>
-                </div>
+                </section>
 
-                <div class="sidebar-section">
-                    <div class="sidebar-title">Workspace files</div>
+                <section class="sidebar-section">
+                    <div class="sidebar-title">File Manager</div>
                     <div id="fileList"></div>
-                    <div style="display:flex;gap:0.4rem;margin-top:0.6rem;">
-                        <input id="newFileName" class="form-input" placeholder="contracts/New.sol" style="font-size:0.78rem;">
-                        <button class="btn small-btn" id="addFileBtn">Add</button>
+                    <div style="display:grid; gap:0.45rem; margin-top:0.55rem;">
+                        <input id="newFileName" class="form-input" placeholder="contracts/NewContract.sol">
+                        <button class="btn small-btn" id="addFileBtn">Add File</button>
                     </div>
-                </div>
+                </section>
 
-                <div class="sidebar-section">
-                    <div class="sidebar-title">Quick notes</div>
-                    <div class="file-meta">• Compile uses real solc-js standard JSON mode</div>
-                    <div class="file-meta">• Deploy + execute use connected wallet signer</div>
-                    <div class="file-meta">• Deployments persist in local storage</div>
-                </div>
-            </div>
+                <section class="sidebar-section">
+                    <div class="sidebar-title">Workspace Controls</div>
+                    <div class="file-meta">Minimal high-contrast IDE. All runtime features active.</div>
+                    <div class="file-meta" style="margin-top:0.4rem;">Compile, deploy, verify hooks, and execution sandboxes are live.</div>
+                </section>
+            </aside>
 
-            <div class="editor-container">
+            <main class="editor-container">
                 <div class="tabs">
                     <div class="tab active" data-tab="editor">Editor</div>
                     <div class="tab" data-tab="compiled">Compiled Output</div>
@@ -340,8 +412,10 @@
                 <div id="editorView" class="panel-view active">
                     <div class="editor-toolbar">
                         <div class="editor-path" id="activeFilePath">contracts/Main.sol</div>
-                        <button class="btn small-btn" id="saveWorkspaceBtn">Save workspace</button>
-                        <button class="btn small-btn" id="formatHintBtn">Format hint</button>
+                        <div style="display:flex; gap:0.45rem; align-items:center;">
+                            <button class="btn small-btn" id="saveWorkspaceBtn">Save Workspace</button>
+                            <button class="btn small-btn" id="formatHintBtn">Format Hint</button>
+                        </div>
                     </div>
                     <div id="monacoEditor"></div>
                 </div>
@@ -353,13 +427,13 @@
                 <div id="deployedView" class="panel-view">
                     <div class="deployments-pane" id="deploymentsPane">No deployments yet.</div>
                 </div>
-            </div>
+            </main>
 
-            <div class="right-panel">
-                <div class="panel-section">
-                    <div class="panel-title">⚙️ Compiler</div>
+            <aside class="right-panel">
+                <section class="panel-section">
+                    <div class="panel-title">Compiler</div>
                     <div class="form-group">
-                        <label class="form-label">Solc version</label>
+                        <label class="form-label">Solc Version</label>
                         <select id="solidityVersion" class="form-select">
                             <option value="0.8.21" selected>0.8.21</option>
                             <option value="0.8.20">0.8.20</option>
@@ -367,81 +441,80 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Optimizer runs</label>
+                        <label class="form-label">Optimizer Runs</label>
                         <select id="optimization" class="form-select">
                             <option value="200" selected>200</option>
                             <option value="1000">1000</option>
                             <option value="0">Disabled</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" id="compileBtn" style="width:100%;">🔨 Compile Workspace</button>
-                </div>
+                    <button class="btn btn-primary" id="compileBtn" style="width:100%;">Compile Workspace</button>
+                </section>
 
-                <div class="panel-section">
-                    <div class="panel-title">🚀 Deploy</div>
-                    <div class="info-box">Select a compiled contract, provide constructor args JSON array, then deploy.</div>
+                <section class="panel-section">
+                    <div class="panel-title">Deployment Sandbox</div>
+                    <div class="info-box">Pick a compiled contract, check constructor args JSON, and deploy live from your connected wallet.</div>
                     <div class="compact-grid">
                         <div class="form-group">
                             <label class="form-label">Contract</label>
                             <select id="contractSelect" class="form-select" disabled><option>Compile first</option></select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Constructor args (JSON array)</label>
+                            <label class="form-label">Constructor Args (JSON Array)</label>
                             <input id="constructorArgs" class="form-input" placeholder='["MyToken","MTK",1000000]'>
                         </div>
-                        <button class="btn btn-success" id="deployBtn" style="width:100%;" disabled>📤 Deploy Contract</button>
+                        <button class="btn btn-success" id="deployBtn" style="width:100%;" disabled>Deploy Contract</button>
                     </div>
-                </div>
+                </section>
 
-                <div class="panel-section">
-                    <div class="panel-title">🧪 Execute</div>
+                <section class="panel-section">
+                    <div class="panel-title">Execution Sandbox</div>
                     <div class="form-group">
-                        <label class="form-label">Active deployment</label>
+                        <label class="form-label">Active Deployment</label>
                         <select id="deploymentSelect" class="form-select"><option>No deployment selected</option></select>
                     </div>
-                    <div id="functionRunner" style="max-height:260px; overflow:auto;">Connect wallet and select deployment.</div>
-                </div>
+                    <div id="functionRunner">Connect wallet and select deployment.</div>
+                </section>
 
-                <div class="panel-section">
-                    <div class="panel-title">✅ Verification hooks</div>
+                <section class="panel-section">
+                    <div class="panel-title">Verification Hooks</div>
                     <div class="form-group">
-                        <label class="form-label">Verify target</label>
+                        <label class="form-label">Verify Target</label>
                         <select id="verifyDeploymentSelect" class="form-select"><option>No deployment selected</option></select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Constructor args (JSON array)</label>
-                        <input id="verifyConstructorArgs" class="form-input" placeholder='["arg1", 123]'>
+                        <label class="form-label">Constructor Args (JSON Array)</label>
+                        <input id="verifyConstructorArgs" class="form-input" placeholder='["arg1",123]'>
                     </div>
-                    <div style="display:grid;gap:0.45rem;">
-                        <button class="btn small-btn" id="openExplorerVerifyBtn">Open explorer verify page</button>
-                        <button class="btn small-btn" id="copyVerifyCommandBtn">Copy hardhat verify command</button>
-                        <button class="btn small-btn" id="copyVerifyPayloadBtn">Copy standard-json verify payload</button>
+                    <div class="compact-grid">
+                        <button class="btn small-btn" id="openExplorerVerifyBtn">Open Explorer Verify</button>
+                        <button class="btn small-btn" id="copyVerifyCommandBtn">Copy Hardhat Command</button>
+                        <button class="btn small-btn" id="copyVerifyPayloadBtn">Copy Standard JSON Payload</button>
                     </div>
-                    <div id="verifyHookOutput" class="file-meta" style="margin-top:0.45rem;"></div>
-                </div>
+                    <div id="verifyHookOutput" class="file-meta" style="margin-top:0.5rem;"></div>
+                </section>
 
-                <div class="panel-section">
-                    <div class="panel-title">🧾 Activity</div>
+                <section class="panel-section">
+                    <div class="panel-title">Activity Feed</div>
                     <div class="form-group">
-                        <label class="form-label">Recent transactions</label>
+                        <label class="form-label">Recent Transactions</label>
                         <div id="txHistory">No transactions yet.</div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Decoded event logs</label>
+                        <label class="form-label">Decoded Event Logs</label>
                         <div id="eventLogs">No event logs yet.</div>
                     </div>
-                </div>
+                </section>
 
-                <div class="panel-section">
-                    <div class="panel-title">📊 Console</div>
+                <section class="panel-section">
+                    <div class="panel-title">Console</div>
                     <div class="console" id="console">
                         <div class="console-log console-info">Booting IDE...</div>
                     </div>
-                </div>
-            </div>
+                </section>
+            </aside>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script>
