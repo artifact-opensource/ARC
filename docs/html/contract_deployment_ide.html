@@ -330,19 +330,122 @@
             color: var(--dim);
         }
 
+        .mobile-dock, .mobile-overlay { display: none; }
+
+        @media (min-width: 1400px) and (max-width: 1700px) {
+            html, body { font-size: 13.5px; }
+            .main-content { grid-template-columns: 252px 1fr 390px; }
+            .sidebar-section, .panel-section { padding: 0.82rem; }
+            .tab { padding: 0.62rem 0.8rem; font-size: 0.64rem; }
+            .editor-toolbar { padding: 0.62rem 0.8rem; }
+            .form-input, .form-select, .network-selector, .form-textarea { padding: 0.46rem 0.52rem; }
+            .btn { padding: 0.44rem 0.58rem; font-size: 0.68rem; }
+        }
+
         @media (max-width: 1360px) {
             .main-content { grid-template-columns: 242px 1fr 360px; }
         }
 
         @media (max-width: 1140px) {
-            .main-content { grid-template-columns: 1fr; }
-            .sidebar, .right-panel {
-                border-left: 0;
-                border-right: 0;
-                border-top: 1px solid var(--border);
-                max-height: 36vh;
+            html, body { font-size: 13px; }
+            .header { padding: 0.72rem 0.75rem; gap: 0.6rem; }
+            .brand { min-width: 0; gap: 0.55rem; }
+            .logo-placeholder { width: 24px; height: 24px; font-size: 9px; }
+            .brand-title .ade { font-size: 0.82rem; letter-spacing: 0.14em; }
+            .brand-title .full { font-size: 0.66rem; }
+            .header-actions { width: 100%; justify-content: space-between; gap: 0.45rem; }
+            .status-badge { font-size: 0.62rem; padding: 0.2rem 0.45rem; }
+            .network-selector { min-width: 0 !important; width: 100% !important; }
+            #connectWallet { width: 100%; }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                position: relative;
+                padding-bottom: 58px;
             }
-            .editor-container { min-height: 44vh; }
+
+            .editor-container {
+                min-height: 0;
+                height: calc(100vh - 126px);
+            }
+
+            .sidebar, .right-panel {
+                position: fixed;
+                top: 66px;
+                bottom: 58px;
+                width: min(92vw, 420px);
+                z-index: 42;
+                border: 1px solid var(--border-strong);
+                box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+                transition: transform 0.2s ease;
+                max-height: none;
+            }
+
+            .sidebar {
+                left: 0;
+                border-left: 0;
+                transform: translateX(-104%);
+            }
+
+            .right-panel {
+                right: 0;
+                border-right: 0;
+                transform: translateX(104%);
+            }
+
+            .sidebar.mobile-active, .right-panel.mobile-active { transform: translateX(0); }
+
+            .mobile-overlay {
+                display: block;
+                position: fixed;
+                inset: 66px 0 58px 0;
+                background: rgba(0,0,0,0.55);
+                z-index: 41;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+            }
+            .mobile-overlay.active { opacity: 1; pointer-events: auto; }
+
+            .mobile-dock {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.45rem;
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 58px;
+                z-index: 45;
+                padding: 0.5rem 0.55rem;
+                border-top: 1px solid var(--border);
+                background: #050505;
+            }
+
+            .dock-btn {
+                border: 1px solid var(--border);
+                background: #0d0d0d;
+                color: var(--muted);
+                border-radius: 7px;
+                font-size: 0.67rem;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                font-weight: 700;
+                padding: 0.44rem 0.25rem;
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+            .dock-btn.active {
+                background: #fff;
+                color: #000;
+                border-color: #fff;
+            }
+
+            .tab { padding: 0.6rem 0.72rem; font-size: 0.63rem; }
+            .editor-toolbar { padding: 0.58rem 0.65rem; gap: 0.45rem; }
+            .sidebar-section, .panel-section { padding: 0.7rem; }
+            .btn, .form-input, .form-select, .form-textarea, .network-selector { min-height: 42px; }
+            .form-label { font-size: 0.63rem; }
         }
     </style>
 </head>
@@ -514,6 +617,12 @@
                 </section>
             </aside>
         </div>
+        <div id="mobileOverlay" class="mobile-overlay" aria-hidden="true"></div>
+        <div class="mobile-dock" role="navigation" aria-label="One-handed panel switcher">
+            <button class="dock-btn active" id="dockEditorBtn" type="button">Editor</button>
+            <button class="dock-btn" id="dockFilesBtn" type="button">Files</button>
+            <button class="dock-btn" id="dockSandboxBtn" type="button">Sandbox</button>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
@@ -636,6 +745,10 @@
             document.getElementById('openExplorerVerifyBtn').addEventListener('click', openExplorerVerifyPage);
             document.getElementById('copyVerifyCommandBtn').addEventListener('click', copyVerifyCommand);
             document.getElementById('copyVerifyPayloadBtn').addEventListener('click', copyVerifyPayload);
+            document.getElementById('dockEditorBtn')?.addEventListener('click', () => setMobilePanel('editor'));
+            document.getElementById('dockFilesBtn')?.addEventListener('click', () => setMobilePanel('files'));
+            document.getElementById('dockSandboxBtn')?.addEventListener('click', () => setMobilePanel('sandbox'));
+            document.getElementById('mobileOverlay')?.addEventListener('click', () => setMobilePanel('editor'));
 
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', () => switchTab(tab.dataset.tab));
@@ -644,6 +757,38 @@
             window.addEventListener('beforeunload', () => {
                 try { saveWorkspace(); } catch (_) {}
             });
+        }
+
+        function setMobilePanel(mode) {
+            const isMobile = window.matchMedia('(max-width: 1140px)').matches;
+            const sidebar = document.querySelector('.sidebar');
+            const rightPanel = document.querySelector('.right-panel');
+            const overlay = document.getElementById('mobileOverlay');
+            const bEditor = document.getElementById('dockEditorBtn');
+            const bFiles = document.getElementById('dockFilesBtn');
+            const bSandbox = document.getElementById('dockSandboxBtn');
+            if (!sidebar || !rightPanel || !overlay || !bEditor || !bFiles || !bSandbox) return;
+
+            sidebar.classList.remove('mobile-active');
+            rightPanel.classList.remove('mobile-active');
+            overlay.classList.remove('active');
+            bEditor.classList.remove('active');
+            bFiles.classList.remove('active');
+            bSandbox.classList.remove('active');
+
+            if (!isMobile || mode === 'editor') {
+                bEditor.classList.add('active');
+                return;
+            }
+
+            if (mode === 'files') {
+                sidebar.classList.add('mobile-active');
+                bFiles.classList.add('active');
+            } else if (mode === 'sandbox') {
+                rightPanel.classList.add('mobile-active');
+                bSandbox.classList.add('active');
+            }
+            overlay.classList.add('active');
         }
 
         function switchTab(tabName) {
@@ -1560,11 +1705,17 @@
             renderFunctionRunner();
             syncVerificationFromSelection();
             renderActivityPanel();
+            setMobilePanel('editor');
             logToConsole('IDE ready: Monaco editor, real compiler, deploy + execute flow online.', 'success');
         }
 
         document.getElementById('networkSelector').addEventListener('change', async (e) => {
             if (window.ethereum) await switchWalletNetwork(e.target.value);
+        });
+        window.addEventListener('resize', () => {
+            if (!window.matchMedia('(max-width: 1140px)').matches) {
+                setMobilePanel('editor');
+            }
         });
 
         document.addEventListener('DOMContentLoaded', boot);
